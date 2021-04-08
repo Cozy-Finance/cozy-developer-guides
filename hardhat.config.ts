@@ -24,24 +24,25 @@ const chainIds = {
 };
 
 // Ensure that we have all the environment variables we need.
-const mnemonic = process.env.MNEMONIC as string; // used for local testing
-if (!mnemonic) throw new Error('Please set your MNEMONIC in a .env file');
-
 const privateKey = process.env.PRIVATE_KEY as string; // used for deployment
 if (!privateKey) throw new Error('Please set your PRIVATE_KEY in a .env file');
 
-const infuraApiKey = process.env.INFURA_API_KEY as string;
-if (!infuraApiKey) throw new Error('Please set your INFURA_API_KEY in a .env file');
+const rpcUrl = process.env.RPC_URL as string;
+if (!rpcUrl) throw new Error('Please set your RPC_URL in a .env file');
 
+// Use the default hardhat mnemonic when on localhost
+const mnemonic = 'test test test test test test test test test test test junk';
+
+// Helper function to generate a hardhat network config
 function createNetworkConfig(network: keyof typeof chainIds): NetworkUserConfig {
-  const url: string = `https://${network}.infura.io/v3/${infuraApiKey}`;
   return {
     accounts: [privateKey],
     chainId: chainIds[network],
-    url,
+    url: rpcUrl,
   };
 }
 
+// Main hardhat configuration
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -51,7 +52,7 @@ const config: HardhatUserConfig = {
       },
       chainId: chainIds.hardhat,
       forking: {
-        url: `https://rinkeby.infura.io/v3/${infuraApiKey}`,
+        url: rpcUrl,
       },
     },
     goerli: createNetworkConfig('goerli'),
