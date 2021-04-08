@@ -16,7 +16,7 @@
   "include": [
     "artifacts/**/*",
     "artifacts/**/*.json",
-    "scripts/**/*",
+    "guides/**/*",
     "tasks/**/*",
     "test/**/*",
     "typechain/**/*",
