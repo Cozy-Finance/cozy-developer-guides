@@ -2,29 +2,51 @@
 pragma solidity ^0.8.3;
 
 /**
- * @notice Interface for creating or interacting with a Trigger contract
- * @dev All trigger contracts created must conform to this interface
+ * @notice Abstract contract for creating or interacting with a Trigger contract
+ * @dev All trigger contracts created must inerit from this contract and conform to this interface
  */
-interface TriggerInterface {
-  /// @notice Trigger name
-  function name() external view returns (string memory);
+abstract contract TriggerInterface {
+  /// @notice Trigger name, analgous to an ERC-20 token's name
+  string public name;
 
-  /// @notice Trigger symbol
-  function symbol() external view returns (string memory);
+  /// @notice Trigger symbol, analgous to an ERC-20 token's symbol
+  string public symbol;
 
   /// @notice Trigger description
-  function description() external view returns (string memory);
+  string public description;
 
-  /// @notice Returns array of IDs, where each ID corresponds to a platform covered by this trigger
-  /// @dev See documentation for mapping of ID number to platform
-  function getPlatformIds() external view returns (uint256[] memory);
+  /// @notice Array of IDs of platforms covered by this trigger
+  uint256[] public platformIds;
 
-  /// @notice Returns address of recipient who receives subsidies for creating the trigger and associated protection market
-  function recipient() external view returns (address);
+  /// @notice Returns address of recipient who receives subsidies for creating a protection market using this trigger
+  address public immutable recipient;
 
   /// @notice Returns true if trigger condition has been met
-  function isTriggered() external view returns (bool);
+  bool public isTriggered;
 
-  /// @notice Checks trigger condition, sets isTriggered flag to true if condition is met, and returns the new trigger status
-  function checkAndToggleTrigger() external returns (bool);
+  /// @notice Emitted when the trigger is activated
+  event TriggerActivated();
+
+  /// @notice Returns array of IDs, where each ID corresponds to a platform covered by this trigger
+  /// @dev See documentation for mapping of ID numbers to platforms
+  function getPlatformIds() external view returns (uint256[] memory) {
+    return platformIds;
+  }
+
+  /// @notice Checks trigger condition, sets isTriggered flag to true if condition is met, and returns isTriggered
+  function checkAndToggleTrigger() external virtual returns (bool);
+
+  constructor(
+    string memory _name,
+    string memory _symbol,
+    string memory _description,
+    uint256[] memory _platformIds,
+    address _recipient
+  ) {
+    name = _name;
+    description = _description;
+    symbol = _symbol;
+    platformIds = _platformIds;
+    recipient = _recipient;
+  }
 }
