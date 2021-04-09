@@ -8,8 +8,6 @@ const address = { 4: rinkebyAddresses };
 type ChainId = keyof typeof address;
 type ContractNames = keyof typeof rinkebyAddresses;
 
-// Ethers log type
-
 // Logging helper methods
 //   - \u2713 = check symbol
 //   - \u2717 = x symbol
@@ -32,6 +30,27 @@ export const getChainId = (hre: HardhatRuntimeEnvironment) => {
   if (forkUrl.includes('goerli')) return 5;
   if (forkUrl.includes('kovan')) return 42;
   return defaultChainId;
+};
+
+// When operating on a forked network, our account needs to get tokens somehow. When forking mainnet, we can either use
+// private key corresponding to an account that already has the needed tokens, or we can use Hardhat's
+// `hardhat_impersonateAccount` RPC method to transfer ourselves tokens from any account that has them. On Rinkeby,
+// anyone can mint the required tokens, so we simply mint them
+export const supplyTokensTo = async (
+  symbol: string,
+  amount: string,
+  to: string,
+  hre: HardhatRuntimeEnvironment,
+  signer: ethers.Wallet
+) => {
+  // symbol is our token symbol, and amount is the human-readable amount. Currently this method only supports Rinkeby
+  const chainId = getChainId(hre);
+  if (chainId !== 4) throw new Error('supplyTokensTo: Unsupported network');
+  const tokenAddress = getContractAddress(symbol, chainId);
+  const mintAbi = ['function mint(address,uint256) returns (bool)', 'function decimals() view returns (uint8)'];
+  const token = new hre.ethers.Contract(tokenAddress, mintAbi, signer);
+  const decimals = await token.decimals();
+  await token.mint(to, hre.ethers.utils.parseUnits(amount, decimals));
 };
 
 /**

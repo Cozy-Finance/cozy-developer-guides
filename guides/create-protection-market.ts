@@ -4,8 +4,7 @@ import { Contract, ContractFactory } from 'ethers';
 import { getChainId, getContractAddress, logSuccess, logFailure, findLog } from '../utils/utils';
 import comptrollerAbi from '../abi/Comptroller.json';
 
-// STEP 0: GENERIC SETUP
-// if (!process.env.PRIVATE_KEY) throw new Error('Please set your PRIVATE_KEY in a .env file');
+// STEP 0: ENVIRONMENT SETUP
 const provider = hre.ethers.provider;
 const signer = new hre.ethers.Wallet(process.env.PRIVATE_KEY as string, hre.ethers.provider);
 const chainId = getChainId(hre);
@@ -35,17 +34,21 @@ async function main(): Promise<void> {
   await trigger.deployed();
   logSuccess(`MockTrigger deployed to ${trigger.address}`);
 
-  // Let's choose DAI as the underlying, so first we need to check if there's a DAI Money Market
+  // Let's choose DAI as the underlying, so first we need to check if there's a DAI Money Market.
+  // We know that Money Markets have a trigger address of the zero address, so we use that to query the Comptroller
+  // for the Money Market address
   const daiAddress = getContractAddress('DAI', chainId);
   const comptrollerAddress = getContractAddress('comptroller', chainId);
   const comptroller = new Contract(comptrollerAddress, comptrollerAbi, signer); // connect signer for sending transactions
-  const daiMoneyMarketAddress = await comptroller.getCToken(daiAddress, AddressZero);
+  const cozyDaiAddress = await comptroller.getCToken(daiAddress, AddressZero);
 
-  if (daiMoneyMarketAddress === AddressZero) {
-    logFailure('No DAI Money Market exists, exiting script');
+  // If the returned address is the zero address, a money market does not exist and we cannot deploy a protection
+  // market with DAI as the underlying
+  if (cozyDaiAddress === AddressZero) {
+    logFailure('No DAI Money Market exists. Exiting script');
     return;
   }
-  logSuccess(`Safe to continue: Found DAI Money Market at ${daiMoneyMarketAddress}`);
+  logSuccess(`Safe to continue: Found DAI Money Market at ${cozyDaiAddress}`);
 
   // If we're here, a DAI Money Market exists, so it's safe to create our new Protection Market. If we tried
   // to create a new Protection Market before a DAI Money Market existed, our transaction would revert
