@@ -15,6 +15,7 @@ const rinkebyAddresses = {
   CozyDAI: rinkebyAddressesRaw['CErc20Immutable:Money Market:Cozy Dai'],
   CozyUSDC: rinkebyAddressesRaw['CErc20Immutable:Money Market:Cozy USD Coin'],
   CozyWBTC: rinkebyAddressesRaw['CErc20Immutable:Money Market:Cozy Wrapped BTC'],
+  Maximillion: rinkebyAddressesRaw['Maximillion:Maximillion'],
 };
 
 // Mapping of chainId to contract addresses

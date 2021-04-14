@@ -11,6 +11,7 @@ import { getChainId, getContractAddress, logSuccess, logFailure, supplyTokensTo,
 import comptrollerAbi from '../abi/Comptroller.json';
 import cozyTokenAbi from '../abi/CozyToken.json';
 import cozyEtherAbi from '../abi/CozyEther.json';
+import maximillionAbi from '../abi/Maximillion.json';
 import erc20Abi from '../abi/ERC20.json';
 
 async function main(): Promise<void> {
@@ -62,9 +63,9 @@ async function main(): Promise<void> {
   const daiAddress = getContractAddress('DAI', chainId); // use our helper method to get the DAI contract address
   const dai = new Contract(daiAddress, erc20Abi, signer);
   const parsedBorrowAmount = parseUnits(borrowAmount, await dai.decimals()); // scale amount based on number of decimals
-  const compProtectionMarket = new Contract('0xA6Ef3A6EfEe0221f30A43cfaa36142F6Bc050c4d', cozyTokenAbi, signer);
-  const borrowTx = await compProtectionMarket.borrow(parsedBorrowAmount); // borrow DAI
-  await findLog(borrowTx, compProtectionMarket, 'Borrow', provider); // verify things worked successfully
+  const compoundDaiProtectionMarket = new Contract('0xA6Ef3A6EfEe0221f30A43cfaa36142F6Bc050c4d', cozyTokenAbi, signer);
+  const borrowTx = await compoundDaiProtectionMarket.borrow(parsedBorrowAmount); // borrow DAI
+  await findLog(borrowTx, compoundDaiProtectionMarket, 'Borrow', provider); // verify things worked successfully
   logSuccess('Supply and borrow setup completed');
 
   // STEP 1: VIEWING POSITIONS
@@ -132,9 +133,85 @@ async function main(): Promise<void> {
       else if (borrowBalance.eq(uBalance)) console.log(`  All the underlying ${uSymbol} tokens we have were borrowed`);
       else console.log(`  ${borrowBalanceScaled} of the ${uBalanceScaled} underlying ${uSymbol} tokens were borrowed`);
     }
-
     console.log('\n');
+  } // end for each asset
+
+  // STEP 2: CHECKING ACCOUNT LIQUIDITY
+  // The amount of collateral you have is computed by multiplying the supplied balance in a market by that market's
+  // collateral factor, and summing that across all markets. Total borrow balances are subtracted from that,
+  // resulting in an Account Liquidity value. Quoting from the Compound documentation:
+  //   > Account Liquidity represents the USD value borrowable by a user, before it reaches liquidation. Users with
+  //   > a shortfall (negative liquidity) are subject to liquidation, and can’t withdraw or borrow assets until
+  //   > Account Liquidity is positive again.
+  // To avoid liquidation, you must ensure that Account Liquidity is always greater than zero. We can check this
+  // for any user as shown below, where we check our own liquidity
+
+  // getAccountLiquidity returns three values. The first is an error code, the second is the excess liquidity, and
+  // the third is the shortfall. Only one of the last two will ever be positive
+  const [errorCode, liquidity, shortfall] = await comptroller.getAccountLiquidity(signer.address);
+
+  // Make sure there were no errors reading the data
+  if (errorCode.toString() !== '0') {
+    logFailure(`Could not read liquidity. Received error code ${errorCode}. Exiting script`);
+    return;
   }
+
+  // There were no errors, so now we check if we have an excess or a shortfall
+  if (shortfall.gt(Zero)) {
+    logFailure(`WARNING: Account is undercollateralized and may get liquidated! Shortfall amount: ${shortfall}`);
+  } else if (liquidity.gt(Zero)) {
+    logSuccess(`Account has excess liquidity and is safe. Amount of liquidity: ${liquidity}`);
+  } else {
+    logFailure('WARNING: Account has no liquidity and no shortfall');
+  }
+
+  // STEP 3: MANAGING POSITIONS
+  // If your collateralization ratio is too close to the minimum required, i.e. you have a shortfall or a small
+  // amount of excess liquidity in the previous step, you may want to supply more collateral. To supply more
+  // collateral programmatically, follow the detailed steps in buy-protection.ts (or reference the abbreviated,
+  // less, detailed version above in this script)
+
+  // An alternate way to reduce your chance of liquidation is to pay back some or all of your borrowed debt.
+  // Let's go through a few ways to do this
+
+  // If we want to repay our own borrows, we can use the repayBorrow method. First we approve the contract to spend
+  // our DAI, then we execute the repay
+  const daiApproveTx = await dai.approve(compoundDaiProtectionMarket.address, MaxUint256); // send approval transaction
+  await daiApproveTx.wait(); // wait for approval transaction to be mined
+  const repayAmount = parseUnits('25', 18); // we'll repay 25 DAI
+  const repayTx = await compoundDaiProtectionMarket.repayBorrow(repayAmount); // repay some DAI
+  await findLog(repayTx, compoundDaiProtectionMarket, 'RepayBorrow', provider); // verify things worked successfully
+  logSuccess('Successfully repaid a portion of the borrow');
+
+  // Some notes on the above repayBorrow() method:
+  //   1. If we wanted to repay the full amount, the best way to do this is to set the repayAmount to MaxUint256. The
+  //      Cozy contracts recognize this as a magic number that will repay all your token debt. If you want to repay
+  //      all token debt and DO NOT use MaxUint256 as the amount, you'll be left with a very tiny borrow balance, known
+  //      as dust. This is because interest accrues during the repay transaction, and it's extremely difficult to
+  //      predict how much will accrue and send the exact right amount of tokens. Using MaxUint256 tells the contracts
+  //      to repay the full debt after interest accrues
+  //
+  //   2. You could use repayBorrowBehalf(borrower,repayAmount) to repay `repayAmount` on behalf of `borrower`. In
+  //      the example above, we could have equivalently used `repayBorrowBehalf(signer.address, repayAmount)` to
+  //      repay our own debt.
+  //
+  //   3. If we wanted to pay back our full ETH balance, we'd have a similar dust issue since ETH is also used for
+  //      gas and predicting the exact gas usage + interest accrual is not feasible. Instead, we can repay a full
+  //      ETH balance using a special contract called the Maximillion contract. It lets you send extra ETH along with
+  //      your transaction, and will refund you the excess after paying back all debt. Below is a sample usage
+
+  // Repay all ETH debt with the Maximillion contract (we actually have zero ETH debt in the script, but that's ok).
+  // First we get an instance of the Maximillion contract
+  const maximillionAddress = getContractAddress('Maximillion', chainId);
+  const maximillion = new Contract(maximillionAddress, maximillionAbi, signer);
+  const ethMarketAddress = '0x212531FA38401345422262Ff05F968Df87031FCE'; // address of the Cozy ETH Money Market
+
+  // Now we do the repay. Our debt is zero, so we send some excess ETH to be refunded after repaying the debt.
+  // Notice how we specify that we are repaying debt for ourselves, `signer.address`, and we specify the address of
+  // the market to repay debt in, `ethMarketAddress`. (We don't look for the success logs since this is a dummy
+  // transaction).
+  const value = parseUnits('0.1', 18);
+  const repayEthTx = await maximillion.repayBehalfExplicit(signer.address, ethMarketAddress, { value });
 }
 
 // We recommend this pattern to be able to use async/await everywhere and properly handle errors.
