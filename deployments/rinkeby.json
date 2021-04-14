@@ -21,5 +21,6 @@
   "CErc20Immutable:Protection Market:Cozy-ETH-1-Mock Compound ETH Trigger": "0x13Fe77e881662035E023A9A33e3E7325BDA98330",
   "CErc20Immutable:Protection Market:Cozy-ETH-2-Mock Aave ETH Trigger": "0xec69F209011c38b6d7e51dc4b751Ae2ef94Dd4dF",
   "CErc20Immutable:Protection Market:Cozy-ETH-3-Mock Yearn ETH Trigger": "0xb070616AE8e36E87F243edbae2E62fC2979B9bCa",
-  "CErc20Immutable:Protection Market:Cozy-DAI-4-Mock Compound DAI Trigger 2": "0x1c5A3d19b31207AFc87E6562575D052dbb401e75"
+  "CErc20Immutable:Protection Market:Cozy-DAI-4-Mock Compound DAI Trigger 2": "0x1c5A3d19b31207AFc87E6562575D052dbb401e75",
+  "Maximillion:Maximillion": "0xFBBDBa59516adA2eADf50f96cE0151edC9e0A674"
 }
