@@ -23,7 +23,7 @@ async function main(): Promise<void> {
 
   // STEP 1: SUPPLY COLLATERAL
   // We know we'll need the Comptroller, so create an instance the Comptroller contract
-  const comptrollerAddress = getContractAddress('comptroller', chainId);
+  const comptrollerAddress = getContractAddress('Comptroller', chainId);
   const comptroller = new Contract(comptrollerAddress, comptrollerAbi, signer); // connect signer for sending transactions
 
   // Let's say we have 1000 USDC to use as collateral
@@ -79,12 +79,12 @@ async function main(): Promise<void> {
 
   // STEP 3: BORROW FUNDS
   // Your account is now ready to borrow funds. Let's say we want protection for Compound's cDAI and we know the
-  // Rinkeby protection market for cDAI is deployed at 0xF5400eb85bDb682d9c4FD9331d3cF34E423e8e1A.
+  // Rinkeby protection market for cDAI is deployed at 0xA6Ef3A6EfEe0221f30A43cfaa36142F6Bc050c4d.
 
   // We want to borrow protected DAI so we can deposit it straight into Compound, so first let's verify the
   // underlying token we'd borrow is in fact DAI
   const daiAddress = getContractAddress('DAI', chainId); // use our helper method to get the DAI contract address
-  const compProtectionMarket = new Contract('0xF5400eb85bDb682d9c4FD9331d3cF34E423e8e1A', cozyTokenAbi, signer);
+  const compProtectionMarket = new Contract('0xA6Ef3A6EfEe0221f30A43cfaa36142F6Bc050c4d', cozyTokenAbi, signer);
   const underlying = await compProtectionMarket.underlying();
   if (getAddress(daiAddress) !== getAddress(underlying)) {
     // We use getAddress() to ensure both addresses are checksummed before comparing them. If this block executes,

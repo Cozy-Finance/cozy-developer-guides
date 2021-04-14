@@ -38,7 +38,7 @@ async function main(): Promise<void> {
   // We know that Money Markets have a trigger address of the zero address, so we use that to query the Comptroller
   // for the Money Market address
   const daiAddress = getContractAddress('DAI', chainId);
-  const comptrollerAddress = getContractAddress('comptroller', chainId);
+  const comptrollerAddress = getContractAddress('Comptroller', chainId);
   const comptroller = new Contract(comptrollerAddress, comptrollerAbi, signer); // connect signer for sending transactions
   const cozyDaiAddress = await comptroller.getCToken(daiAddress, AddressZero);
 

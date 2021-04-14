@@ -1,7 +1,21 @@
 import ethers from 'ethers';
 import chalk from 'chalk';
-import rinkebyAddresses from '../deployments/rinkeby.json';
+import rinkebyAddressesRaw from '../deployments/rinkeby.json';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
+
+// Rename Rinkeby contract names from the verbose deploy names to something more concise
+const rinkebyAddresses = {
+  ETH: rinkebyAddressesRaw.ETH,
+  DAI: rinkebyAddressesRaw.DAI,
+  USDC: rinkebyAddressesRaw.USDC,
+  WBTC: rinkebyAddressesRaw.WBTC,
+  Oracle: rinkebyAddressesRaw['ChainlinkReporter:Oracle'],
+  Comptroller: rinkebyAddressesRaw['ComptrollerStatic:Comptroller'],
+  CozyETH: rinkebyAddressesRaw['CErc20Immutable:Money Market:Cozy Ether'],
+  CozyDAI: rinkebyAddressesRaw['CErc20Immutable:Money Market:Cozy Dai'],
+  CozyUSDC: rinkebyAddressesRaw['CErc20Immutable:Money Market:Cozy USD Coin'],
+  CozyWBTC: rinkebyAddressesRaw['CErc20Immutable:Money Market:Cozy Wrapped BTC'],
+};
 
 // Mapping of chainId to contract addresses
 const address = { 4: rinkebyAddresses };
