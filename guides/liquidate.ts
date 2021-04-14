@@ -1,7 +1,8 @@
 /**
- * TODO description of script
- *
- *
+ * This guide covers the following:
+ *   - Checking available liquidity and shortfall for a given account
+ *   - Computing the maximum amount of funds that can be repaid when liquidating
+ *   - Liquidating an account that has a shortfall
  */
 
 import hre from 'hardhat';
@@ -33,9 +34,9 @@ async function main(): Promise<void> {
   //   a shortfall (negative liquidity) are subject to liquidation, and can’t withdraw or borrow assets until
   //   Account Liquidity is positive again.
   //
-  // To liquidate an account, that account must have a shortfall Account Liquidity is always greater than zero. We
-  // can check this as shown below. In reality, we would not liquidate ourselves, but since we can't guarantee an
-  // existing account is ready to be liquidated we use our own for example
+  // To liquidate an account, that account must have a shortfall. We can check if an account has a shortfall as
+  // shown below. Since we can't guarantee an existing account is ready to be liquidated we use an arbitrary address
+  // below and explain what you'd expect if this account could be liquidated,
   const comptrollerAddress = getContractAddress('Comptroller', chainId); // get address of the Comptroller
   const comptroller = new Contract(comptrollerAddress, comptrollerAbi, signer); // connect signer for sending transactions
   const borrowerToLiquidate = '0x0000000000000000000000000000000000000001'; // enter address to liquidate here
@@ -47,16 +48,17 @@ async function main(): Promise<void> {
     return;
   }
 
-  // There were no errors, so now we check if we have an excess or a shortfall. (Since our account above has no
-  // shortfall, you'll need to comment out the return statements to move past this section)
+  // There were no errors, so now we check if we have an excess or a shortfall. One and only one of `shortfall`
+  // and `liquidity` will be above zero. (Since our chosen account above has no shortfall, you'll need to comment out
+  // the return statements to move past this section)
   if (shortfall.gt(Zero)) {
     logSuccess(`Account is undercollateralized and can be liquidated! Shortfall amount: ${shortfall}`);
   } else if (liquidity.gt(Zero)) {
     logFailure(`Account has excess liquidity and is safe. Amount of liquidity: ${liquidity}. Exiting script`);
-    // return;
+    return;
   } else {
     logFailure('Account has no liquidity and no shortfall. Exiting script.');
-    // return;
+    return;
   }
 
   // STEP 2: PERFORM LIQUIDATION

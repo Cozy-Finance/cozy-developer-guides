@@ -1,3 +1,10 @@
+/**
+ * This guide covers the following:
+ *   - Supplying funds to a market
+ *   - Entering markets to use supplied funds as collateral
+ *   - Using that collateral to borrow funds
+ */
+
 import hre from 'hardhat';
 import '@nomiclabs/hardhat-ethers';
 import { Contract, ContractFactory } from 'ethers';

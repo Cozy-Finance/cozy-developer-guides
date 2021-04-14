@@ -1,3 +1,9 @@
+/**
+ * This guide covers the following:
+ *   - Creating a trigger contract
+ *   - Deploying a new Protection Market using that trigger contract
+ */
+
 import hre from 'hardhat';
 import '@nomiclabs/hardhat-ethers';
 import { Contract, ContractFactory } from 'ethers';

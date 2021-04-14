@@ -1,7 +1,8 @@
 /**
- * TODO description of script
- *
- *
+ * This guide covers the following:
+ *   - Viewing your position details, including details on supplied and borrowed funds
+ *   - Checking your account liquidity to ensure you aren't at risk of liquidation
+ *   - Supplying more funds and repaying debt
  */
 
 import hre from 'hardhat';
@@ -74,7 +75,7 @@ async function main(): Promise<void> {
   const ourAddress = signer.address; // shorthand, for convenience
   const assets = await comptroller.getAssetsIn(ourAddress); // returns an array of CozyToken addresses
 
-  // Now we can do a few things, such as checking balances, borrow amounts, and looking up exchange rats. We don't yet
+  // Now we can do a few things, such as checking balances, borrow amounts, and looking up exchange rates. We don't yet
   // necessarily know whether we've borrowed from and/or supplied to this market, but we can easily figure that out.
   // Let's loop through each asset and learn our current status in that market.
   console.log('Checking status of each asset...\n');
@@ -146,7 +147,7 @@ async function main(): Promise<void> {
   // To avoid liquidation, you must ensure that Account Liquidity is always greater than zero. We can check this
   // for any user as shown below, where we check our own liquidity
 
-  // getAccountLiquidity returns three values. The first is an error code, the second is the excess liquidity, and
+  // getAccountLiquidity() returns three values. The first is an error code, the second is the excess liquidity, and
   // the third is the shortfall. Only one of the last two will ever be positive
   const [errorCode, liquidity, shortfall] = await comptroller.getAccountLiquidity(signer.address);
 
@@ -186,10 +187,10 @@ async function main(): Promise<void> {
   // Some notes on the above repayBorrow() method:
   //   1. If we wanted to repay the full amount, the best way to do this is to set the repayAmount to MaxUint256. The
   //      Cozy contracts recognize this as a magic number that will repay all your token debt. If you want to repay
-  //      all token debt and DO NOT use MaxUint256 as the amount, you'll be left with a very tiny borrow balance, known
-  //      as dust. This is because interest accrues during the repay transaction, and it's extremely difficult to
-  //      predict how much will accrue and send the exact right amount of tokens. Using MaxUint256 tells the contracts
-  //      to repay the full debt after interest accrues
+  //      all token debt but do noy use MaxUint256 as the amount, you'll be left with a very tiny borrow balance, known
+  //      as dust. This happens because interest accrues at the beginning of the repay transaction, and it's extremely
+  //      difficult to predict how much will accrue and send the exact right amount of tokens. Using MaxUint256 tells
+  //      the contracts to repay the full debt after interest accrues
   //
   //   2. You could use repayBorrowBehalf(borrower,repayAmount) to repay `repayAmount` on behalf of `borrower`. In
   //      the example above, we could have equivalently used `repayBorrowBehalf(signer.address, repayAmount)` to
@@ -198,18 +199,19 @@ async function main(): Promise<void> {
   //   3. If we wanted to pay back our full ETH balance, we'd have a similar dust issue since ETH is also used for
   //      gas and predicting the exact gas usage + interest accrual is not feasible. Instead, we can repay a full
   //      ETH balance using a special contract called the Maximillion contract. It lets you send extra ETH along with
-  //      your transaction, and will refund you the excess after paying back all debt. Below is a sample usage
+  //      your transaction, repays your debt using repayBorrowBehalf(), and will refund you the excess after paying
+  //      back all debt. Below is a sample usage
 
   // Repay all ETH debt with the Maximillion contract (we actually have zero ETH debt in the script, but that's ok).
   // First we get an instance of the Maximillion contract
   const maximillionAddress = getContractAddress('Maximillion', chainId);
   const maximillion = new Contract(maximillionAddress, maximillionAbi, signer);
-  const ethMarketAddress = '0x212531FA38401345422262Ff05F968Df87031FCE'; // address of the Cozy ETH Money Market
+  const ethMarketAddress = getContractAddress('CozyETH', chainId); // address of the Cozy ETH Money Market
 
   // Now we do the repay. Our debt is zero, so we send some excess ETH to be refunded after repaying the debt.
   // Notice how we specify that we are repaying debt for ourselves, `signer.address`, and we specify the address of
   // the market to repay debt in, `ethMarketAddress`. (We don't look for the success logs since this is a dummy
-  // transaction).
+  // transaction and we have no debt, but in practice you should).
   const value = parseUnits('0.1', 18);
   const repayEthTx = await maximillion.repayBehalfExplicit(signer.address, ethMarketAddress, { value });
 }
