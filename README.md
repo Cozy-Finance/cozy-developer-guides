@@ -50,3 +50,4 @@ For an explanation of Error Codes that may be returned, see [TODO GitBook link].
 | `create-protection-market.ts` | Write a Trigger contract and use that as the foundation for a new Protection Market          |
 | `liquidate.ts`                | Check if an account can be liquidated, how much can be liquidated, and liquidate the account |
 | `manage-protection.ts`        | View your existing positions and account liquidity, supply more collateral, and repay debt   |
+| `provide-protection.ts`       | Supply funds to provide protection to a Protection Market                                    |
