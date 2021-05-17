@@ -25,7 +25,7 @@ async function main(): Promise<void> {
   const { parseUnits } = hre.ethers.utils;
 
   // Since we are testing on a forked Rinkeby and our account has no tokens, we need to initialize the account with
-  // the required tokens
+  // the required tokens. This step is not needed when testing against a live network
   await supplyTokensTo('USDC', supplyAmount, signer.address, hre, signer);
 
   // STEP 1: VERIFY MARKET
@@ -34,7 +34,7 @@ async function main(): Promise<void> {
   const comptroller = new Contract(comptrollerAddress, comptrollerAbi, signer); // connect signer for sending transactions
 
   // The first check is to make sure our protection market is a valid protection market that we can supply to
-  const cUsdcProtectionMarketAddr = '0xbb0e6fC1FE1913DF8f0A483E6dC48329871cb2b7'; // this is the protection market address
+  const cUsdcProtectionMarketAddr = '0xbb0e6fC1FE1913DF8f0A483E6dC48329871cb2b7'; // this is the Rinkeby protection market address
   const allMarkets = await comptroller.getAllMarkets();
   if (!allMarkets.includes(cUsdcProtectionMarketAddr)) {
     logFailure("Provided Protection Market address not found in the Comptroller's list of all markets");
