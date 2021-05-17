@@ -25,7 +25,7 @@ async function main(): Promise<void> {
   const { getAddress, parseUnits } = hre.ethers.utils;
 
   // Since we are testing on a forked Rinkeby and our account has no tokens, we need to initialize the account with
-  // the required tokens
+  // the required tokens. This step is not needed when testing against a live network
   await supplyTokensTo('USDC', supplyAmount, signer.address, hre, signer);
 
   // STEP 1: SUPPLY COLLATERAL
