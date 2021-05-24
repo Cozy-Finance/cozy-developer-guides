@@ -5,7 +5,7 @@ pragma solidity ^0.8.4;
  * @notice Abstract contract for creating or interacting with a Trigger contract
  * @dev All trigger contracts created must inerit from this contract and conform to this interface
  */
-abstract contract TriggerInterface {
+abstract contract ITrigger {
   /// @notice Trigger name, analgous to an ERC-20 token's name
   string public name;
 

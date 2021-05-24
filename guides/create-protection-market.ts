@@ -25,7 +25,7 @@ const platformIds = [3]; // array of platform IDs that this trigger protects
 const recipient = '0x1234567890AbcdEF1234567890aBcdef12345678'; // address of subsidy recipient
 
 // STEP 2: TRIGGER CONTRACT DEVELOPMENT
-// For this step, see the TriggerInterface and MockTrigger contracts and read the corresponding markdown file
+// For this step, see the ITrigger and MockTrigger contracts and read the corresponding markdown file
 
 // STEP 3: PROTECTION MARKET DEPLOYMENT
 async function main(): Promise<void> {
