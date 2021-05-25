@@ -25,6 +25,7 @@ contract MockTrigger is ITrigger {
    * @notice Special function for this mock trigger to set whether or not the trigger should toggle
    */
   function setShouldToggle(bool _shouldToggle) external {
+    require(!isTriggered, "Cannot set after trigger event");
     shouldToggle = _shouldToggle;
   }
 
