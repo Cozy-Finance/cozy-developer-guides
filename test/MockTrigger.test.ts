@@ -1,6 +1,8 @@
 /**
  * @notice This file tests the MockTrigger.sol contract included in this repository, and contains an initial set
  * of tests that should be modified and tested for any real trigger
+ * @dev The default configuration of this repository means these tests will run against a forked network, with
+ * the network it runs against being defined in the RPC_URL environment variable
  */
 
 import { artifacts, ethers, waffle } from 'hardhat';
