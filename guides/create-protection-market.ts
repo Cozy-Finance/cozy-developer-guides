@@ -35,8 +35,8 @@ async function main(): Promise<void> {
   // Get instance of the Trigger ContractFactory with our signer attached
   const MockTriggerFactory: ContractFactory = await hre.ethers.getContractFactory('MockTrigger', signer);
 
-  // Deploy the trigger contract
-  const trigger: Contract = await MockTriggerFactory.deploy(name, symbol, description, platformIds, recipient);
+  // Deploy the trigger contract (last constructor parameter is specific to the trigger contract)
+  const trigger: Contract = await MockTriggerFactory.deploy(name, symbol, description, platformIds, recipient, false);
   await trigger.deployed();
   logSuccess(`MockTrigger deployed to ${trigger.address}`);
 
