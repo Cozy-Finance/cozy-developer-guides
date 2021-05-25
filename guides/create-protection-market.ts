@@ -57,7 +57,10 @@ async function main(): Promise<void> {
   logSuccess(`Safe to continue: Found DAI Money Market at ${cozyDaiAddress}`);
 
   // If we're here, a DAI Money Market exists, so it's safe to create our new Protection Market. If we tried
-  // to create a new Protection Market before a DAI Money Market existed, our transaction would revert
+  // to create a new Protection Market before a DAI Money Market existed, our transaction would revert. Also,
+  // notice how we do not provide an `interestRateModel` address--this means we'll use the default interest rate model
+  // specified by the `ProtectionMarketFactory`. If you want to use a custom interest rate model, develop, test, and
+  // deploy your interest rate model, then pass the address as a third input to `deployProtectionMarket()`
   const tx = await comptroller.deployProtectionMarket(daiAddress, trigger.address);
 
   // This should emit a ProtectionMarketListed event on success, so let's check for that event. If not found, this
