@@ -7,7 +7,7 @@
 import hre from 'hardhat';
 import '@nomiclabs/hardhat-ethers';
 import { Contract, ContractFactory } from 'ethers';
-import { getChainId, getContractAddress, logSuccess, logFailure, findLog } from '../utils/utils';
+import { getChainId, getContractAddress, logSuccess, logFailure, findLog, fundAccount } from '../utils/utils';
 import comptrollerAbi from '../abi/Comptroller.json';
 
 // STEP 0: ENVIRONMENT SETUP
@@ -33,6 +33,11 @@ const triggerParams = [name, symbol, description, platformIds, recipient, should
 async function main(): Promise<void> {
   // Compile contracts to make sure we're using the latest version of the trigger contracts
   await hre.run('compile');
+
+  // Since we are testing on a forked mainnet and our account has no funds, we need to initialize the account with
+  // the required tokens. This step is not needed when the private key in your .env file has funds on mainnet
+  const ethAddress = getContractAddress('ETH', chainId);
+  await fundAccount(ethAddress, '10', signer.address, hre); // fund signer with 10 ETH
 
   // Get instance of the Trigger ContractFactory with our signer attached
   const MockTriggerFactory: ContractFactory = await hre.ethers.getContractFactory('MockTrigger', signer);

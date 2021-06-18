@@ -17,26 +17,27 @@ import erc20Abi from '../abi/ERC20.json';
 
 async function main(): Promise<void> {
   // STEP 0: ENVIRONMENT SETUP
-  // If the signer you are using does not have a balance of over 1 ETH, you'll need to transfer some ETH to it from
-  // this script. Since this is run against a forked network, you can use `hardhat_impersonateAccount` to impersonate
-  // any account with ETH and send it to your signer's address: https://hardhat.org/guides/mainnet-forking.html#impersonating-accounts
   const provider = hre.ethers.provider;
   const signer = new hre.ethers.Wallet(process.env.PRIVATE_KEY as string, hre.ethers.provider);
   const chainId = getChainId(hre);
   const cTokenDecimals = 8; // all Cozy Tokens have 8 decimals, so we define this for convenience later
-  const ETH_ADDRESS = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'; // address used to represent ETH in the contracts
   const { AddressZero, MaxUint256, Zero } = hre.ethers.constants;
   const { formatUnits, parseUnits } = hre.ethers.utils;
-  await fundAccount(ETH_ADDRESS, '10', signer.address, hre);
+
+  // Since we are testing on a forked mainnet and our account has no funds, we need to initialize the account with
+  // the required tokens. This step is not needed when the private key in your .env file has funds on mainnet
+  const ethAddress = getContractAddress('ETH', chainId);
+  await fundAccount(ethAddress, '10', signer.address, hre); // fund signer with 10 ETH
 
   // Here we follow a condensed version of the buy-protection.ts script so our account has positions to manage. See
   // the buy-protection.ts file more more information on what we are doing here.
 
   // Setup
-  const supplyAmount = '1000'; // Amount of USDC we want to supply, in dollars (e.g. 1000 = $1000 = 1000 USDC)
+  const supplyAmountEth = '1'; // Amount of ETH we want to supply
+  const supplyAmountUsdc = '1000'; // Amount of USDC we want to supply, in dollars (e.g. 1000 = $1000 = 1000 USDC)
   const borrowAmount = '200'; // Amount USDC we want to borrow, in dollars
   const usdcAddress = getContractAddress('USDC', chainId); // use our helper method to get the USDC contract address
-  await fundAccount(usdcAddress, supplyAmount, signer.address, hre); // Fund our test account with tokens
+  await fundAccount(usdcAddress, supplyAmountUsdc, signer.address, hre); // Fund our test account with tokens
 
   // Get instance of Comptroller and use it to find address of the Cozy USDC Money Market
   const comptrollerAddress = getContractAddress('Comptroller', chainId); // get address of the Comptroller
@@ -47,15 +48,15 @@ async function main(): Promise<void> {
   const usdc = new Contract(usdcAddress, erc20Abi, signer); // create USDC contract instance
 
   // Mint cozyUSDC with our USDC
-  const parsedSupplyAmount = parseUnits(supplyAmount, await usdc.decimals()); // scale amount based on number of decimals
+  const parsedSupplyAmount = parseUnits(supplyAmountUsdc, await usdc.decimals()); // scale amount based on number of decimals
   const approveTx = await usdc.approve(cozyUsdc.address, MaxUint256); // approve Cozy USDC to spend our USDC
   const mintTx1 = await cozyUsdc.mint(parsedSupplyAmount); // send the mint tx
   await findLog(mintTx1, cozyUsdc, 'Mint', provider); // verify things worked successfully
 
   // Mint cozyEth with our ETH
-  const cozyEthAddress = await comptroller.getCToken(ETH_ADDRESS, AddressZero); // get address of USDC Money Market
+  const cozyEthAddress = await comptroller.getCToken(ethAddress, AddressZero); // get address of USDC Money Market
   const cozyEth = new Contract(cozyEthAddress, cozyEtherAbi, signer); // create Cozy USDC contract instance
-  const mintTx2 = await cozyEth.mint({ value: parseUnits('1', 18) }); // send the mint tx
+  const mintTx2 = await cozyEth.mint({ value: parseUnits(supplyAmountEth, 18) }); // send the mint tx
   await findLog(mintTx2, cozyEth, 'Mint', provider); // verify things worked successfully
 
   // Enter markets and wait for all transactions to be mined
@@ -91,7 +92,7 @@ async function main(): Promise<void> {
     // Let's also learn about the underlying token. First we determine if the underlying is ETH then get a contract
     // instance for the underlying token if the underlying is not ETH
     const uAddr = await cToken.underlying();
-    const isEth = uAddr === ETH_ADDRESS; // true if underlying is ETH, false otherwise
+    const isEth = uAddr === ethAddress; // true if underlying is ETH, false otherwise
     const underlying = isEth ? null : new Contract(uAddr, erc20Abi, signer);
 
     // Lastly we either read set the values if ETH is underlying, or read the values if it's a token
