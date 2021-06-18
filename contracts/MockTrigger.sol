@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
 import "./ITrigger.sol";
@@ -18,7 +17,7 @@ contract MockTrigger is ITrigger {
     shouldToggle = _shouldToggle;
 
     // Verify market is not already triggered.
-    require(!isMarketTriggered(), "Already triggered");
+    require(!checkTriggerCondition(), "Already triggered");
   }
 
   /**
@@ -32,25 +31,7 @@ contract MockTrigger is ITrigger {
   /**
    * @notice Returns true if the market has been triggered, false otherwise
    */
-  function isMarketTriggered() internal view returns (bool) {
+  function checkTriggerCondition() internal view override returns (bool) {
     return shouldToggle;
-  }
-
-  /**
-   * @notice Checks trigger condition, sets isTriggered flag to true if condition is met, and
-   * returns the trigger status
-   * @dev For this mock trigger, there is no condition to check, so it just returns isTriggered
-   */
-  function checkAndToggleTrigger() external override returns (bool) {
-    // Short circuit if trigger already toggled
-    if (isTriggered) return true;
-
-    // Return false if market has not been triggered
-    if (!isMarketTriggered()) return false;
-
-    // Otherwise, market has been triggered
-    emit TriggerActivated();
-    isTriggered = true;
-    return isTriggered;
   }
 }

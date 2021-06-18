@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
 /**
@@ -27,15 +26,6 @@ abstract contract ITrigger {
   /// @notice Emitted when the trigger is activated
   event TriggerActivated();
 
-  /// @notice Returns array of IDs, where each ID corresponds to a platform covered by this trigger
-  /// @dev See documentation for mapping of ID numbers to platforms
-  function getPlatformIds() external view returns (uint256[] memory) {
-    return platformIds;
-  }
-
-  /// @notice Checks trigger condition, sets isTriggered flag to true if condition is met, and returns isTriggered
-  function checkAndToggleTrigger() external virtual returns (bool);
-
   constructor(
     string memory _name,
     string memory _symbol,
@@ -48,5 +38,36 @@ abstract contract ITrigger {
     symbol = _symbol;
     platformIds = _platformIds;
     recipient = _recipient;
+  }
+
+  /**
+   * @notice Returns array of IDs, where each ID corresponds to a platform covered by this trigger
+   * @dev See documentation for mapping of ID numbers to platforms
+   */
+  function getPlatformIds() external view returns (uint256[] memory) {
+    return platformIds;
+  }
+
+  /**
+   * @dev Executes trigger-specific logic to check if market has been triggered
+   * @return True if trigger condition occured, false otherwise
+   */
+  function checkTriggerCondition() internal virtual returns (bool);
+
+  /**
+   * @notice Checks trigger condition, sets isTriggered flag to true if condition is met, and returns the trigger status
+   * @return True if trigger condition occured, false otherwise
+   */
+  function checkAndToggleTrigger() external returns (bool) {
+    // Return true if trigger already toggled
+    if (isTriggered) return true;
+
+    // Return false if market has not been triggered
+    if (!checkTriggerCondition()) return false;
+
+    // Otherwise, market has been triggered
+    emit TriggerActivated();
+    isTriggered = true;
+    return isTriggered;
   }
 }
