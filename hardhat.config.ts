@@ -1,12 +1,10 @@
 import '@nomiclabs/hardhat-waffle';
 import '@typechain/hardhat';
 import 'solidity-coverage';
-
 import './tasks/accounts';
 import './tasks/clean';
 
 import { resolve } from 'path';
-
 import { config as dotenvConfig } from 'dotenv';
 import { HardhatUserConfig } from 'hardhat/config';
 import { NetworkUserConfig } from 'hardhat/types';
@@ -47,18 +45,10 @@ const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
     hardhat: {
-      accounts: {
-        mnemonic,
-      },
+      accounts: { mnemonic },
       chainId: chainIds.hardhat,
-      forking: {
-        url: rpcUrl,
-      },
+      forking: { url: rpcUrl },
     },
-    goerli: createNetworkConfig('goerli'),
-    kovan: createNetworkConfig('kovan'),
-    rinkeby: createNetworkConfig('rinkeby'),
-    ropsten: createNetworkConfig('ropsten'),
     mainnet: createNetworkConfig('mainnet'),
   },
   paths: {
@@ -71,7 +61,7 @@ const config: HardhatUserConfig = {
     timeout: 0,
   },
   solidity: {
-    version: '0.8.4',
+    version: '0.8.5',
     settings: {
       metadata: {
         // Not including the metadata hash
