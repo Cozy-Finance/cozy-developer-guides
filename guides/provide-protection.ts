@@ -14,9 +14,6 @@ import erc20Abi from '../abi/ERC20.json';
 
 async function main(): Promise<void> {
   // STEP 0: ENVIRONMENT SETUP
-  // If the signer you are using does not have a balance of over 1 ETH, you'll need to transfer some ETH to it from
-  // this script. Since this is run against a forked network, you can use `hardhat_impersonateAccount` to impersonate
-  // any account with ETH and send it to your signer's address: https://hardhat.org/guides/mainnet-forking.html#impersonating-accounts
   const supplyAmount = '1000'; // Amount of USDC we want to supply, in dollars (e.g. 1000 = $1000 = 1000 USDC)
   const provider = hre.ethers.provider;
   const signer = new hre.ethers.Wallet(process.env.PRIVATE_KEY as string, hre.ethers.provider);
@@ -24,9 +21,11 @@ async function main(): Promise<void> {
   const { MaxUint256 } = hre.ethers.constants;
   const { parseUnits } = hre.ethers.utils;
 
-  // Since we are testing on a forked Rinkeby and our account has no tokens, we need to initialize the account with
-  // the required tokens. This step is not needed when testing against a live network
-  const usdcAddress = getContractAddress('USDC', chainId); // use our helper method to get the USDC contract address
+  // Since we are testing on a forked mainnet and our account has no funds, we need to initialize the account with
+  // the required tokens. This step is not needed when the private key in your .env file has funds on mainnet
+  const ethAddress = getContractAddress('ETH', chainId);
+  const usdcAddress = getContractAddress('USDC', chainId);
+  await fundAccount(ethAddress, '10', signer.address, hre);
   await fundAccount(usdcAddress, supplyAmount, signer.address, hre);
 
   // STEP 1: VERIFY MARKET

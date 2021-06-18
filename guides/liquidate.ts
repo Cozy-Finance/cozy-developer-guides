@@ -8,7 +8,7 @@
 import hre from 'hardhat';
 import '@nomiclabs/hardhat-ethers';
 import { Contract } from 'ethers';
-import { getChainId, getContractAddress, logSuccess, logFailure, findLog } from '../utils/utils';
+import { getChainId, getContractAddress, logSuccess, logFailure, findLog, fundAccount } from '../utils/utils';
 import comptrollerAbi from '../abi/Comptroller.json';
 import cozyTokenAbi from '../abi/CozyToken.json';
 
@@ -20,6 +20,11 @@ async function main(): Promise<void> {
 
   const { Zero } = hre.ethers.constants;
   const { formatUnits } = hre.ethers.utils;
+
+  // Since we are testing on a forked mainnet and our account has no funds, we need to initialize the account with
+  // the required tokens. This step is not needed when the private key in your .env file has funds on mainnet
+  const ethAddress = getContractAddress('ETH', chainId);
+  await fundAccount(ethAddress, '10', signer.address, hre); // fund signer with 10 ETH
 
   // STEP 1: CHECK ACCOUNT LIQUIDITY
   // The amount of collateral an account has have is computed by multiplying the supplied balance in a market by that
@@ -77,8 +82,8 @@ async function main(): Promise<void> {
 
   // First we need to choose which collateral of the borrower we want to seize. If needed, we could find a list of
   // available collateral options using the same process as "Step 1: Viewing Positions" in manage-protection.ts. For
-  // simplicity, here we'll assume the collateral is regular cozyUSDC and the borrow is a protected Yearn USDC vault
-  const cozyUsdcAddress = getContractAddress('CozyUSDC', chainId);
+  // simplicity, here we'll assume the collateral is regular cozyETH and the borrow is a protected Yearn USDC vault
+  const cozyEthAddress = getContractAddress('CozyETH', chainId);
   const yearnProtectionMarketAddress = getContractAddress('YearnProtectionMarket', chainId);
   const yearnProtectionMarket = new Contract(yearnProtectionMarketAddress, cozyTokenAbi, signer);
 
@@ -97,7 +102,7 @@ async function main(): Promise<void> {
   // report that the LiquidateBorrow event was not found and print error code 3. This corresponds to
   // COMPTROLLER_REJECTION. Looking at the Comptroller's `liquidateBorrowAllowed` hook, we'll find the Comptroller
   // rejected the liquidation because there is no shortfall, i.e. the borrower cannot be liquidated
-  const tx = await yearnProtectionMarket.liquidateBorrow(borrowerToLiquidate, repayAmount, cozyUsdcAddress);
+  const tx = await yearnProtectionMarket.liquidateBorrow(borrowerToLiquidate, repayAmount, cozyEthAddress);
   await findLog(tx, yearnProtectionMarket, 'LiquidateBorrow', provider); // verify things worked successfully
 }
 
