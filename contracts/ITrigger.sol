@@ -1,4 +1,4 @@
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.5;
 
 /**
  * @notice Abstract contract for creating or interacting with a Trigger contract
