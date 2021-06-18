@@ -56,7 +56,8 @@
     "lint:ts": "eslint --config ./.eslintrc.yaml --ignore-path ./.eslintignore --ext .js,.ts .",
     "prettier": "prettier --config .prettierrc --write \"**/*.{js,json,md,sol,js,ts}\"",
     "test": "yarn compile && hardhat test",
-    "typechain": "hardhat typechain"
+    "typechain": "hardhat typechain",
+    "localhost": "source .env && yarn hardhat node --fork $RPC_URL"
   },
   "husky": {
     "hooks": {

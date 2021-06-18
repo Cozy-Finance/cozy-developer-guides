@@ -1,36 +1,34 @@
 import ethers from 'ethers';
 import chalk from 'chalk';
-import rinkebyAddressesRaw from '../deployments/rinkeby.json';
+import mainnetDeployAddresses from '../deployments/mainnet.json';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
-// Rename Rinkeby contract names from the verbose deploy names to something more concise
-const rinkebyAddresses = {
-  ETH: rinkebyAddressesRaw.ETH,
-  DAI: rinkebyAddressesRaw.DAI,
-  USDC: rinkebyAddressesRaw.USDC,
-  WBTC: rinkebyAddressesRaw.WBTC,
-  Oracle: rinkebyAddressesRaw['ChainlinkReporter:Oracle'],
-  Comptroller: rinkebyAddressesRaw['ComptrollerStatic:Comptroller'],
-  InterestRateModelETH: rinkebyAddressesRaw['interestRateModelETH'],
-  InterestRateModelWBTC: rinkebyAddressesRaw['interestRateModelWBTC'],
-  InterestRateModelStablecoin: rinkebyAddressesRaw['interestRateModelStablecoin'],
-  CozyETH: rinkebyAddressesRaw['CErc20Immutable:Money Market:Cozy Ether'],
-  CozyDAI: rinkebyAddressesRaw['CErc20Immutable:Money Market:Cozy Dai'],
-  CozyUSDC: rinkebyAddressesRaw['CErc20Immutable:Money Market:Cozy USD Coin'],
-  CozyWBTC: rinkebyAddressesRaw['CErc20Immutable:Money Market:Cozy Wrapped BTC'],
-  Maximillion: rinkebyAddressesRaw['Maximillion:Maximillion'],
+// Rename contract names from the verbose deploy names to something more concise
+const mainnetAddresses = {
+  ETH: mainnetDeployAddresses.ETH,
+  DAI: mainnetDeployAddresses.DAI,
+  USDC: mainnetDeployAddresses.USDC,
+  WBTC: mainnetDeployAddresses.WBTC,
+  Oracle: mainnetDeployAddresses['ChainlinkReporter:Oracle'],
+  Comptroller: mainnetDeployAddresses['ComptrollerStatic:Comptroller'],
+  InterestRateModelETH: mainnetDeployAddresses['WhitePaperInterestRateModel:ETH'],
+  InterestRateModelWBTC: mainnetDeployAddresses['WhitePaperInterestRateModel:WBTC'],
+  InterestRateModelStablecoin: mainnetDeployAddresses['JumpRateModelV2:Stablecoins'],
+  CozyETH: mainnetDeployAddresses['CErc20Immutable:Money Market:Cozy Ether'],
+  CozyDAI: mainnetDeployAddresses['CErc20Immutable:Money Market:Cozy Dai'],
+  CozyUSDC: mainnetDeployAddresses['CErc20Immutable:Money Market:Cozy USD Coin'],
+  CozyWBTC: mainnetDeployAddresses['CErc20Immutable:Money Market:Cozy Wrapped BTC'],
+  Maximillion: mainnetDeployAddresses['Maximillion:Maximillion'],
 };
 
 // Mapping of chainId to contract addresses
-const address = { 4: rinkebyAddresses };
+const address = { 1: mainnetAddresses };
 type ChainId = keyof typeof address;
-type ContractNames = keyof typeof rinkebyAddresses;
+type ContractNames = keyof typeof mainnetAddresses;
 
 // Logging helper methods
-//   - \u2713 = check symbol
-//   - \u2717 = x symbol
-export const logSuccess = (msg: string) => console.log(`${chalk.green('\u2713')} ${msg}`);
-export const logFailure = (msg: string) => console.log(`${chalk.red('\u2717')} ${msg}`);
+export const logSuccess = (msg: string) => console.log(`${chalk.green('\u2713')} ${msg}`); // \u2713 = check symbol
+export const logFailure = (msg: string) => console.log(`${chalk.red('\u2717')} ${msg}`); // \u2717 = x symbol
 
 // Gets a contract's address by it's name and chainId
 export const getContractAddress = (name: string, chainId: number) => {
@@ -39,7 +37,7 @@ export const getContractAddress = (name: string, chainId: number) => {
 
 // Gets the chainId from the hardhat configuration (normally you could get this from ethers.provider.network.chainId)
 export const getChainId = (hre: HardhatRuntimeEnvironment) => {
-  const defaultChainId = 4; // default to Rinkeby
+  const defaultChainId = 1; // default to mainnet
   const forkUrl = hre.config.networks.hardhat.forking?.url;
   if (!forkUrl) return defaultChainId;
   if (forkUrl.includes('mainnet')) return 1;
