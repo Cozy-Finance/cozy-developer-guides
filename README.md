@@ -9,11 +9,16 @@ This repository contains various guides to show you how to interact with the Coz
 
 ## Getting Started
 
-All scripts in this repository are run against a local fork of the Rinkeby testnet using [Hardhat](https://hardhat.org/), so you can have confidence that if your scripts work in this environment they should also work in production. For more information on running scripts against a forked network, see the [Mainnet Forking](https://hardhat.org/guides/mainnet-forking.html) section of the Hardhat documentation.
+All scripts in this repository are run against a local fork of the Ethereum mainnet using [Hardhat](https://hardhat.org/), so you can have confidence that if your scripts work in this environment they should also work in production. For more information on running scripts against a forked network, see the [Mainnet Forking](https://hardhat.org/guides/mainnet-forking.html) section of the Hardhat documentation.
 
 First, run `yarn` at the project root to install all dependencies.
 
-Next, copy the `.env.example` file, rename it to `.env`, and set the variables accordingly. The `RPC_URL` shows an Infura endpoint as the default, but you are free to use any node provider of your choice. The private key will be used to generate the primary account used in scripts, so you can either use a dummy private key and use the power of a forked network to fund it, or you can use a private key corresponding to an account that's already funded.
+Next, copy the `.env.example` file, rename it to `.env`, and set the variables accordingly:
+
+- `RPC_URL` shows an Infura endpoint as the default, but you are free to use any node provider of your choice. Use the full RPC URL as the value for this environment variable
+- The `PRIVATE_KEY` will be used to generate the primary account used in scripts, so you can either:
+  1. Use a private key corresponding to an account that has ETH on mainnet (the default scripts assume you are using this approach), or
+  2. Use any arbitrary private key and use the `fundAccount()` method of `utils.ts` to supply the account with funds at the beginning of a script
 
 Let's also discuss one important aspect of Cozy: handling failed transactions. As with Compound, just because a transaction was successful does not mean it succeeded in doing what you expected. Cozy inherited some of Compound's error handling approaches, which means a transaction may be successful&mdash;and show as successful on Etherscan and other block explorers&mdash;but in reality it didn't do what you expected. This is because some failed transactions will return an error code and emit a `Failure` event instead of reverting. You can find Compound's error codes [here](https://compound.finance/docs/ctokens#error-codes), and a brief history of why it's handled this way [here](https://www.comp.xyz/t/brief-history-of-error-handling-in-the-protocol/1169).
 
@@ -38,7 +43,7 @@ And finally, a few notes on Hardhat:
 - The scripts explicitly require the Hardhat Runtime Environment with `import hre from 'hardhat'`. This is optional, but is required for running the script in a standalone fashion with `yarn ts-node <script.ts>`. When running the script with `yarn hardhat run <script>` this explicit import is unnecessary. We default to the explicit, `ts-node` approach so there's less hardhat magic and improved readability and portability. Similarly, this is why some scripts call `await hre.run('compile')`&mdash;this compiles our contracts, and would otherwise be done automatically when running with `yarn hardhat run <script>`
 - Some scripts deploy contracts by using `hre.ethers.getContractFactory()` to get the Contract Factory instance. If you want to do this without Hardhat, use the regular ethers [Contract Factory](https://docs.ethers.io/v5/single-page/#/v5/api/contract/contract-factory/) approach. Deploying contracts is not the focus of these guides, so it uses the Hardhat approach for convenience and brevity.
 - For convenience, these scripts often access ethers methods using `hre.ethers`. If you want to remove Hardhat, you should be able to replace `hre.ethers` with `ethers` seamlessly.
-- Normally, if you want to know which chain ID your provider is connected to, you could simply use `ethers.provider.network.chainId`. Because these scripts runs against a local, forked network, the chain ID is Hardhat's default value of 1337. The `getContractAddress()` helper method in `utils/utils.ts` relies on the chain ID to properly fetch contract addresses, so we define a custom `getChainId()` method to override the chain ID based on which network we've forked locally against
+- Normally, if you want to know which chain ID your provider is connected to, you could simply use `(await ethers.provider.getNetwork()).chainId`. Because these scripts runs against a local, forked network, the chain ID is Hardhat's default value of 1337. The `getContractAddress()` helper method in `utils/utils.ts` relies on the chain ID to properly fetch contract addresses, so we define a custom `getChainId()` method to override the chain ID based on which network we've forked locally against
 
 ## Index of Guides
 
