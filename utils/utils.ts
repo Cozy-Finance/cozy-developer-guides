@@ -94,8 +94,10 @@ export const fundAccount = async (tokenAddress: string, amount: string, to: stri
     const token = new Contract(tokenAddress, tokenAbi, signer);
     const decimals = await token.decimals();
     await token.transfer(to, parseUnits(amount, decimals));
-    await hre.network.provider.request({ method: 'hardhat_stopImpersonatingAccount', params: [exchange] });
   }
+
+  // Stop impersonating the account since it's no longer needed
+  await hre.network.provider.request({ method: 'hardhat_stopImpersonatingAccount', params: [exchange] });
 };
 
 /**
