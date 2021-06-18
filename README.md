@@ -17,8 +17,10 @@ Next, copy the `.env.example` file, rename it to `.env`, and set the variables a
 
 - `RPC_URL` shows an Infura endpoint as the default, but you are free to use any node provider of your choice. Use the full RPC URL as the value for this environment variable
 - The `PRIVATE_KEY` will be used to generate the primary account used in scripts, so you can either:
-  1. Use a private key corresponding to an account that has ETH on mainnet (the default scripts assume you are using this approach), or
+  1. Use a private key corresponding to an account that has ETH on mainnet, or
   2. Use any arbitrary private key and use the `fundAccount()` method of `utils.ts` to supply the account with funds at the beginning of a script
+
+The default scripts often assume your account has ETH, but some guides may add extra ETH to the account at the beginning of the script.
 
 Let's also discuss one important aspect of Cozy: handling failed transactions. As with Compound, just because a transaction was successful does not mean it succeeded in doing what you expected. Cozy inherited some of Compound's error handling approaches, which means a transaction may be successful&mdash;and show as successful on Etherscan and other block explorers&mdash;but in reality it didn't do what you expected. This is because some failed transactions will return an error code and emit a `Failure` event instead of reverting. You can find Compound's error codes [here](https://compound.finance/docs/ctokens#error-codes), and a brief history of why it's handled this way [here](https://www.comp.xyz/t/brief-history-of-error-handling-in-the-protocol/1169).
 

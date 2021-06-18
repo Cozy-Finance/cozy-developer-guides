@@ -7,8 +7,8 @@
 
 import hre from 'hardhat';
 import '@nomiclabs/hardhat-ethers';
-import { Contract, ContractFactory } from 'ethers';
-import { getChainId, getContractAddress, logSuccess, logFailure, supplyTokensTo, findLog } from '../utils/utils';
+import { Contract } from 'ethers';
+import { getChainId, getContractAddress, logSuccess, logFailure, fundAccount, findLog } from '../utils/utils';
 import comptrollerAbi from '../abi/Comptroller.json';
 import cozyTokenAbi from '../abi/CozyToken.json';
 import cozyEtherAbi from '../abi/CozyEther.json';
@@ -26,20 +26,22 @@ async function main(): Promise<void> {
   const cTokenDecimals = 8; // all Cozy Tokens have 8 decimals, so we define this for convenience later
   const ETH_ADDRESS = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'; // address used to represent ETH in the contracts
   const { AddressZero, MaxUint256, Zero } = hre.ethers.constants;
-  const { formatUnits, getAddress, parseUnits } = hre.ethers.utils;
+  const { formatUnits, parseUnits } = hre.ethers.utils;
+  await fundAccount(ETH_ADDRESS, '10', signer.address, hre);
 
   // Here we follow a condensed version of the buy-protection.ts script so our account has positions to manage. See
   // the buy-protection.ts file more more information on what we are doing here.
 
   // Setup
   const supplyAmount = '1000'; // Amount of USDC we want to supply, in dollars (e.g. 1000 = $1000 = 1000 USDC)
-  const borrowAmount = '200'; // Amount DAI we want to borrow, in dollars (e.g. 200 = $200 = 200 DAI)
-  await supplyTokensTo('USDC', supplyAmount, signer.address, hre, signer); // Fund our test account with tokens
+  const borrowAmount = '200'; // Amount USDC we want to borrow, in dollars
+  const usdcAddress = getContractAddress('USDC', chainId); // use our helper method to get the USDC contract address
+  await fundAccount(usdcAddress, supplyAmount, signer.address, hre); // Fund our test account with tokens
 
   // Get instance of Comptroller and use it to find address of the Cozy USDC Money Market
   const comptrollerAddress = getContractAddress('Comptroller', chainId); // get address of the Comptroller
   const comptroller = new Contract(comptrollerAddress, comptrollerAbi, signer); // connect signer for sending transactions
-  const usdcAddress = getContractAddress('USDC', chainId); // use our helper method to get the USDC contract address
+
   const cozyUsdcAddress = await comptroller.getCToken(usdcAddress, AddressZero); // get address of USDC Money Market
   const cozyUsdc = new Contract(cozyUsdcAddress, cozyTokenAbi, signer); // create Cozy USDC contract instance
   const usdc = new Contract(usdcAddress, erc20Abi, signer); // create USDC contract instance
@@ -60,13 +62,13 @@ async function main(): Promise<void> {
   const emTx = await comptroller.enterMarkets([cozyUsdc.address, cozyEth.address]); // after Mint we can enter markets
   await Promise.all([approveTx.wait(), mintTx1.wait(), mintTx2.wait(), emTx.wait()]); // wait for txs to be mined
 
-  // Borrow protected DAI from known protection market at address 0xA6Ef3A6EfEe0221f30A43cfaa36142F6Bc050c4d
-  const daiAddress = getContractAddress('DAI', chainId); // use our helper method to get the DAI contract address
-  const dai = new Contract(daiAddress, erc20Abi, signer);
-  const parsedBorrowAmount = parseUnits(borrowAmount, await dai.decimals()); // scale amount based on number of decimals
-  const compoundDaiProtectionMarket = new Contract('0xA6Ef3A6EfEe0221f30A43cfaa36142F6Bc050c4d', cozyTokenAbi, signer);
-  const borrowTx = await compoundDaiProtectionMarket.borrow(parsedBorrowAmount); // borrow DAI
-  await findLog(borrowTx, compoundDaiProtectionMarket, 'Borrow', provider); // verify things worked successfully
+  // Borrow protected USDC from Yearn protection market
+  const yearnProtectionMarketAddress = getContractAddress('YearnProtectionMarket', chainId);
+  const yearnProtectionMarket = new Contract(yearnProtectionMarketAddress, cozyTokenAbi, signer);
+
+  const parsedBorrowAmount = parseUnits(borrowAmount, await usdc.decimals()); // scale amount based on number of decimals
+  const borrowTx = await yearnProtectionMarket.borrow(parsedBorrowAmount); // borrow USDC
+  await findLog(borrowTx, yearnProtectionMarket, 'Borrow', provider); // verify things worked successfully
   logSuccess('Supply and borrow setup completed');
 
   // STEP 1: VIEWING POSITIONS
@@ -159,7 +161,7 @@ async function main(): Promise<void> {
 
   // There were no errors, so now we check if we have an excess or a shortfall
   if (shortfall.gt(Zero)) {
-    logFailure(`WARNING: Account is undercollateralized and may get liquidated! Shortfall amount: ${shortfall}`);
+    logFailure(`WARNING: Account is under-collateralized and may get liquidated! Shortfall amount: ${shortfall}`);
   } else if (liquidity.gt(Zero)) {
     logSuccess(`Account has excess liquidity and is safe. Amount of liquidity: ${liquidity}`);
   } else {
@@ -176,12 +178,13 @@ async function main(): Promise<void> {
   // Let's go through a few ways to do this
 
   // If we want to repay our own borrows, we can use the repayBorrow method. First we approve the contract to spend
-  // our DAI, then we execute the repay
-  const daiApproveTx = await dai.approve(compoundDaiProtectionMarket.address, MaxUint256); // send approval transaction
-  await daiApproveTx.wait(); // wait for approval transaction to be mined
-  const repayAmount = parseUnits('25', 18); // we'll repay 25 DAI
-  const repayTx = await compoundDaiProtectionMarket.repayBorrow(repayAmount); // repay some DAI
-  await findLog(repayTx, compoundDaiProtectionMarket, 'RepayBorrow', provider); // verify things worked successfully
+  // our USDC, then we execute the repay
+  const usdcApproveTx = await usdc.approve(yearnProtectionMarket.address, MaxUint256); // send approval transaction
+  await usdcApproveTx.wait(); // wait for approval transaction to be mined
+  const usdcDecimals = await usdc.decimals();
+  const repayAmount = parseUnits('25', usdcDecimals); // we'll repay 25 USDC
+  const repayTx = await yearnProtectionMarket.repayBorrow(repayAmount); // repay some USDC
+  await findLog(repayTx, yearnProtectionMarket, 'RepayBorrow', provider); // verify things worked successfully
   logSuccess('Successfully repaid a portion of the borrow');
 
   // Some notes on the above repayBorrow() method:

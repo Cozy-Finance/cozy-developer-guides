@@ -7,8 +7,8 @@
 
 import hre from 'hardhat';
 import '@nomiclabs/hardhat-ethers';
-import { Contract, ContractFactory } from 'ethers';
-import { getChainId, getContractAddress, logSuccess, logFailure, supplyTokensTo, findLog } from '../utils/utils';
+import { Contract } from 'ethers';
+import { getChainId, getContractAddress, logSuccess, logFailure, fundAccount, findLog } from '../utils/utils';
 import comptrollerAbi from '../abi/Comptroller.json';
 import cozyTokenAbi from '../abi/CozyToken.json';
 import erc20Abi from '../abi/ERC20.json';
@@ -16,7 +16,7 @@ import erc20Abi from '../abi/ERC20.json';
 async function main(): Promise<void> {
   // STEP 0: ENVIRONMENT SETUP
   const supplyAmount = '1000'; // Amount of USDC we want to supply, in dollars (e.g. 1000 = $1000 = 1000 USDC)
-  const borrowAmount = '200'; // Amount DAI we want to borrow, in dollars (e.g. 200 = $200 = 200 DAI)
+  const borrowAmount = '200'; // Amount USDC we want to borrow for protected borrows, in dollars
 
   const provider = hre.ethers.provider;
   const signer = new hre.ethers.Wallet(process.env.PRIVATE_KEY as string, hre.ethers.provider);
@@ -24,9 +24,10 @@ async function main(): Promise<void> {
   const { AddressZero, MaxUint256 } = hre.ethers.constants;
   const { getAddress, parseUnits } = hre.ethers.utils;
 
-  // Since we are testing on a forked Rinkeby and our account has no tokens, we need to initialize the account with
-  // the required tokens. This step is not needed when testing against a live network
-  await supplyTokensTo('USDC', supplyAmount, signer.address, hre, signer);
+  // Since we are testing on a forked mainnet and our account has no tokens (just ETH), we need to initialize the
+  // account with the required tokens. This step is not needed when testing against a live network
+  const usdcAddress = getContractAddress('USDC', chainId); // use our helper method to get the USDC contract address
+  await fundAccount(usdcAddress, supplyAmount, signer.address, hre);
 
   // STEP 1: SUPPLY COLLATERAL
   // We know we'll need the Comptroller, so create an instance the Comptroller contract
@@ -36,7 +37,6 @@ async function main(): Promise<void> {
   // Let's say we have 1000 USDC to use as collateral
   // The first check is to make sure a USDC Money Market exists that we can supply to. We know that Money Markets
   // have a trigger address of the zero address, so we use that to query the Comptroller fo the Money Market address
-  const usdcAddress = getContractAddress('USDC', chainId); // use our helper method to get the USDC contract address
   const cozyUsdcAddress = await comptroller.getCToken(usdcAddress, AddressZero);
 
   // If the returned address is the zero address, a money market does not exist and we cannot supply USDC
@@ -85,30 +85,28 @@ async function main(): Promise<void> {
   logSuccess(`Markets entered successfully: USDC can now be used as collateral`);
 
   // STEP 3: BORROW FUNDS
-  // Your account is now ready to borrow funds. Let's say we want protection for Compound's cDAI and we know the
-  // Rinkeby protection market for cDAI is deployed at 0xA6Ef3A6EfEe0221f30A43cfaa36142F6Bc050c4d.
+  // Your account is now ready to borrow funds
 
-  // We want to borrow protected DAI so we can deposit it straight into Compound, so first let's verify the
-  // underlying token we'd borrow is in fact DAI
-  const daiAddress = getContractAddress('DAI', chainId); // use our helper method to get the DAI contract address
-  const compProtectionMarket = new Contract('0xA6Ef3A6EfEe0221f30A43cfaa36142F6Bc050c4d', cozyTokenAbi, signer);
-  const underlying = await compProtectionMarket.underlying();
-  if (getAddress(daiAddress) !== getAddress(underlying)) {
+  // We want to borrow protected USDC so we can deposit it straight into Yearn's yUSDC vault, so first let's verify the
+  // underlying token we'd borrow is in fact USDC
+  const yearnProtectionMarketAddress = getContractAddress('YearnProtectionMarket', chainId);
+  const yearnProtectionMarket = new Contract(yearnProtectionMarketAddress, cozyTokenAbi, signer);
+  const underlying = await yearnProtectionMarket.underlying();
+  if (getAddress(usdcAddress) !== getAddress(underlying)) {
     // We use getAddress() to ensure both addresses are checksummed before comparing them. If this block executes,
     // the underlying of the protection market is not the underlying we want, so we exit the script
-    logFailure('DAI addresses do not match. Exiting script');
+    logFailure('USDC addresses do not match. Exiting script');
     return;
   }
 
   // Now we do the borrow
-  const dai = new Contract(daiAddress, erc20Abi, signer);
-  const parsedBorrowAmount = parseUnits(borrowAmount, await dai.decimals()); // scale amount based on number of decimals
-  const borrowTx = await compProtectionMarket.borrow(parsedBorrowAmount);
-  const { log: borrowLog, receipt: borrowReceipt } = await findLog(borrowTx, compProtectionMarket, 'Borrow', provider);
-  logSuccess(`Protected DAI borrowed in transaction ${borrowReceipt.transactionHash}`);
+  const parsedBorrowAmount = parseUnits(borrowAmount, await usdc.decimals()); // scale amount based on number of decimals
+  const borrowTx = await yearnProtectionMarket.borrow(parsedBorrowAmount);
+  const { log: borrowLog, receipt: borrowReceipt } = await findLog(borrowTx, yearnProtectionMarket, 'Borrow', provider);
+  logSuccess(`Protected USDC borrowed in transaction ${borrowReceipt.transactionHash}`);
 
-  // Done! You are now supplying 1000 USDC as collateral to borrow 200 protected DAI. The DAI debt will not need
-  // to be paid back if the Compound trigger event occurs, so the 200 DAI can now be safely supplied to Compound
+  // Done! You are now supplying 1000 USDC as collateral to borrow 200 protected USDC. The USDC debt will not need
+  // to be paid back if the Yearn trigger event occurs, so the 200 USDC can now be safely supplied to Yearn
 }
 
 // We recommend this pattern to be able to use async/await everywhere and properly handle errors.
