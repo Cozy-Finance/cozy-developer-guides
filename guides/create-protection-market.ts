@@ -23,9 +23,11 @@ const symbol = 'MOCK'; // trigger symbol
 const description = 'A mock trigger that anyone can toggle'; // trigger description
 const platformIds = [3]; // array of platform IDs that this trigger protects
 const recipient = '0x1234567890AbcdEF1234567890aBcdef12345678'; // address of subsidy recipient
+const shouldToggle = false; // specific to our MockTrigger, which we set to not be triggered at deployment
+const triggerParams = [name, symbol, description, platformIds, recipient, shouldToggle];
 
 // STEP 2: TRIGGER CONTRACT DEVELOPMENT
-// For this step, see the ITrigger and MockTrigger contracts and read the corresponding markdown file
+// For this step, see the ITrigger.sol and MockTrigger.sol examples and the corresponding documentation
 
 // STEP 3: PROTECTION MARKET DEPLOYMENT
 async function main(): Promise<void> {
@@ -36,7 +38,7 @@ async function main(): Promise<void> {
   const MockTriggerFactory: ContractFactory = await hre.ethers.getContractFactory('MockTrigger', signer);
 
   // Deploy the trigger contract (last constructor parameter is specific to the trigger contract)
-  const trigger: Contract = await MockTriggerFactory.deploy(name, symbol, description, platformIds, recipient, false);
+  const trigger: Contract = await MockTriggerFactory.deploy(...triggerParams);
   await trigger.deployed();
   logSuccess(`MockTrigger deployed to ${trigger.address}`);
 
