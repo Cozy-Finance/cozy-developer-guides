@@ -7,23 +7,19 @@
 
 import hre from 'hardhat';
 import '@nomiclabs/hardhat-ethers';
-import { Contract, ContractFactory } from 'ethers';
-import { getChainId, getContractAddress, logSuccess, logFailure, supplyTokensTo, findLog } from '../utils/utils';
+import { Contract } from 'ethers';
+import { getChainId, getContractAddress, logSuccess, logFailure, findLog } from '../utils/utils';
 import comptrollerAbi from '../abi/Comptroller.json';
 import cozyTokenAbi from '../abi/CozyToken.json';
-import cozyEtherAbi from '../abi/CozyEther.json';
-import maximillionAbi from '../abi/Maximillion.json';
-import erc20Abi from '../abi/ERC20.json';
 
 async function main(): Promise<void> {
   // STEP 0: ENVIRONMENT SETUP
   const provider = hre.ethers.provider;
   const signer = new hre.ethers.Wallet(process.env.PRIVATE_KEY as string, hre.ethers.provider);
   const chainId = getChainId(hre);
-  const cTokenDecimals = 8; // all Cozy Tokens have 8 decimals, so we define this for convenience later
-  const ETH_ADDRESS = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'; // address used to represent ETH in the contracts
-  const { AddressZero, MaxUint256, Zero } = hre.ethers.constants;
-  const { formatUnits, getAddress, parseUnits } = hre.ethers.utils;
+
+  const { Zero } = hre.ethers.constants;
+  const { formatUnits } = hre.ethers.utils;
 
   // STEP 1: CHECK ACCOUNT LIQUIDITY
   // The amount of collateral an account has have is computed by multiplying the supplied balance in a market by that
@@ -52,7 +48,7 @@ async function main(): Promise<void> {
   // and `liquidity` will be above zero. (Since our chosen account above has no shortfall, you'll need to comment out
   // the return statements to move past this section)
   if (shortfall.gt(Zero)) {
-    logSuccess(`Account is undercollateralized and can be liquidated! Shortfall amount: ${shortfall}`);
+    logSuccess(`Account is under-collateralized and can be liquidated! Shortfall amount: ${shortfall}`);
   } else if (liquidity.gt(Zero)) {
     logFailure(`Account has excess liquidity and is safe. Amount of liquidity: ${liquidity}. Exiting script`);
     return;
@@ -81,29 +77,28 @@ async function main(): Promise<void> {
 
   // First we need to choose which collateral of the borrower we want to seize. If needed, we could find a list of
   // available collateral options using the same process as "Step 1: Viewing Positions" in manage-protection.ts. For
-  // simplicity, here we'll assume the collateral is regular cozyUSDC and the borrow is a protected Compound DAI
-  // market at 0xA6Ef3A6EfEe0221f30A43cfaa36142F6Bc050c4d
+  // simplicity, here we'll assume the collateral is regular cozyUSDC and the borrow is a protected Yearn USDC vault
   const cozyUsdcAddress = getContractAddress('CozyUSDC', chainId);
-  const compoundDaiProtectionMarket = new Contract('0xA6Ef3A6EfEe0221f30A43cfaa36142F6Bc050c4d', cozyTokenAbi, signer);
+  const yearnProtectionMarketAddress = getContractAddress('YearnProtectionMarket', chainId);
+  const yearnProtectionMarket = new Contract(yearnProtectionMarketAddress, cozyTokenAbi, signer);
 
   // Next we choose an amount of their debt to repay. The max amount we can repay is equal to the closeFactor multiplied
   // by their borrow balance, so let's check their borrow balance
-  const cozyDaiBorrowed = await compoundDaiProtectionMarket.borrowBalanceStored(borrowerToLiquidate);
+  const usdcBorrowed = await yearnProtectionMarket.borrowBalanceStored(borrowerToLiquidate);
 
   // If we wanted to liquidate the max amount, we can compute this below. Here we divide the amount by 1e18 because
-  // we multiply the DAI amount (18 decimals) by the closeFactor (18 decimals), giving us a 36 decimal number. The
-  // liquidation amount should be in units of the borrowed asset, which is DAI, so we divide by the close factor's
-  // units to get an 18 decimal number
+  // we multiply the USDC amount (6 decimals) by the closeFactor (18 decimals), giving us a 24 decimal number. The
+  // liquidation amount should be in units of the borrowed asset, which is USDC, so we divide by 1e18 to get there
   const scale = '1000000000000000000'; // 1e18
-  const repayAmount = cozyDaiBorrowed.mul(closeFactor).div(scale);
-  logSuccess(`Ready to repay ${repayAmount.toString()} DAI`);
+  const repayAmount = usdcBorrowed.mul(closeFactor).div(scale);
+  logSuccess(`Ready to repay ${repayAmount.toString()} USDC`);
 
   // Execute the liquidation. In this case, since our account has zero shortfall, we expect the findLog method to
   // report that the LiquidateBorrow event was not found and print error code 3. This corresponds to
   // COMPTROLLER_REJECTION. Looking at the Comptroller's `liquidateBorrowAllowed` hook, we'll find the Comptroller
   // rejected the liquidation because there is no shortfall, i.e. the borrower cannot be liquidated
-  const tx = await compoundDaiProtectionMarket.liquidateBorrow(borrowerToLiquidate, repayAmount, cozyUsdcAddress);
-  await findLog(tx, compoundDaiProtectionMarket, 'LiquidateBorrow', provider); // verify things worked successfully
+  const tx = await yearnProtectionMarket.liquidateBorrow(borrowerToLiquidate, repayAmount, cozyUsdcAddress);
+  await findLog(tx, yearnProtectionMarket, 'LiquidateBorrow', provider); // verify things worked successfully
 }
 
 // We recommend this pattern to be able to use async/await everywhere and properly handle errors.

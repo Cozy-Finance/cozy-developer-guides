@@ -1,6 +1,6 @@
 import { Contract } from '@ethersproject/contracts';
 import { JsonRpcProvider, TransactionResponse } from '@ethersproject/providers';
-import { parseUnits } from '@ethersproject/units';
+import { parseEther, parseUnits } from '@ethersproject/units';
 import chalk from 'chalk';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import mainnetDeployAddresses from '../deployments/mainnet.json';
@@ -86,11 +86,16 @@ export const fundAccount = async (tokenAddress: string, amount: string, to: stri
   await hre.network.provider.request({ method: 'hardhat_impersonateAccount', params: [exchange] });
   const signer = await hre.ethers.provider.getSigner(exchange);
 
-  // Transfer tokens from the exchange to the wallet
-  const token = new Contract(tokenAddress, tokenAbi, signer);
-  const decimals = await token.decimals();
-  await token.transfer(to, parseUnits(amount, decimals));
-  await hre.network.provider.request({ method: 'hardhat_stopImpersonatingAccount', params: [exchange] });
+  if (tokenAddress === mainnetAddresses.ETH) {
+    // Transfer ETH from the exchange to the wallet
+    await signer.sendTransaction({ to, value: parseEther(amount) });
+  } else {
+    // Transfer tokens from the exchange to the wallet
+    const token = new Contract(tokenAddress, tokenAbi, signer);
+    const decimals = await token.decimals();
+    await token.transfer(to, parseUnits(amount, decimals));
+    await hre.network.provider.request({ method: 'hardhat_stopImpersonatingAccount', params: [exchange] });
+  }
 };
 
 /**
