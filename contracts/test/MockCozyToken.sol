@@ -1,6 +1,6 @@
 pragma solidity ^0.8.5;
 
-import "../ITrigger.sol";
+import "../interfaces/ITrigger.sol";
 
 /**
  * @notice Mock MockCozyToken, for testing the return value of a trigger's `checkAndToggleTrigger()` method
