@@ -40,28 +40,28 @@ async function main(): Promise<void> {
   await trigger.deployed();
   logSuccess(`MockTrigger deployed to ${trigger.address}`);
 
-  // Let's choose DAI as the underlying, so first we need to check if there's a DAI Money Market.
+  // Let's choose USDC as the underlying, so first we need to check if there's a USDC Money Market.
   // We know that Money Markets have a trigger address of the zero address, so we use that to query the Comptroller
   // for the Money Market address
-  const daiAddress = getContractAddress('DAI', chainId);
+  const usdcAddress = getContractAddress('USDC', chainId);
   const comptrollerAddress = getContractAddress('Comptroller', chainId);
   const comptroller = new Contract(comptrollerAddress, comptrollerAbi, signer); // connect signer for sending transactions
-  const cozyDaiAddress = await comptroller.getCToken(daiAddress, AddressZero);
+  const cozyUsdcAddress = await comptroller.getCToken(usdcAddress, AddressZero);
 
   // If the returned address is the zero address, a money market does not exist and we cannot deploy a protection
-  // market with DAI as the underlying
-  if (cozyDaiAddress === AddressZero) {
-    logFailure('No DAI Money Market exists. Exiting script');
+  // market with USDC as the underlying
+  if (cozyUsdcAddress === AddressZero) {
+    logFailure('No USDC Money Market exists. Exiting script');
     return;
   }
-  logSuccess(`Safe to continue: Found DAI Money Market at ${cozyDaiAddress}`);
+  logSuccess(`Safe to continue: Found USDC Money Market at ${cozyUsdcAddress}`);
 
-  // If we're here, a DAI Money Market exists, so it's safe to create our new Protection Market. If we tried
-  // to create a new Protection Market before a DAI Money Market existed, our transaction would revert. Also,
+  // If we're here, a USDC Money Market exists, so it's safe to create our new Protection Market. If we tried
+  // to create a new Protection Market before a USDC Money Market existed, our transaction would revert. Also,
   // notice how we do not provide an `interestRateModel` address--this means we'll use the default interest rate model
   // specified by the `ProtectionMarketFactory`. If you want to use a custom interest rate model, develop, test, and
   // deploy your interest rate model, then pass the address as a third input to `deployProtectionMarket()`
-  const tx = await comptroller.deployProtectionMarket(daiAddress, trigger.address);
+  const tx = await comptroller.deployProtectionMarket(usdcAddress, trigger.address);
 
   // This should emit a ProtectionMarketListed event on success, so let's check for that event. If not found, this
   // method will throw and print the Failure error codes which can be looked up in ErrorReporter.sol
