@@ -24,7 +24,7 @@ const chainIds = {
 };
 
 // Ensure that we have all the environment variables we need.
-const privateKey = process.env.PRIVATE_KEY as string; // used for deployment
+const privateKey = process.env.PRIVATE_KEY as string;
 if (!privateKey) throw new Error('Please set your PRIVATE_KEY in a .env file');
 
 const rpcUrl = process.env.RPC_URL as string;
@@ -59,6 +59,7 @@ const config: HardhatUserConfig = {
     kovan: createNetworkConfig('kovan'),
     rinkeby: createNetworkConfig('rinkeby'),
     ropsten: createNetworkConfig('ropsten'),
+    mainnet: createNetworkConfig('mainnet'),
   },
   paths: {
     artifacts: './artifacts',

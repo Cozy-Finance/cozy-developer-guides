@@ -28,7 +28,7 @@ All guides are located in the `guides` folder and contain up to two files:
 
 A script may be run with the command `yarn ts-node guides/<script-name.ts>`. Additional notes on the guides:
 
-- Some guides may only have one of the two files. Guides with both can be recognized as the `*.md` and `*.ts` files will have the same name. All TypeScript files will be heavily commented to aid understanding and readability, and TypeScript is used throughout so there's no ambiguity around what a variable or parameter is.
+- All TypeScript files are heavily commented to aid understanding and readability, and TypeScript is used throughout so there's no ambiguity around what a variable or parameter is.
 - Some guides require contracts. Any required contracts live in the `contracts` folder, and you can compile the contracts in that folder with `yarn build`.
 - Contract addresses used to test against live deployments on a forked network can be found in the `deployments` folder
 - Money Markets are named `CozyToken` with a symbol of `cozyTokenSymbol`, for example `Cozy Dai` and `cozyDAI`. Scripts use this naming convention to identify money markets

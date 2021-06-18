@@ -1,0 +1,21 @@
+{
+  "ETH": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+  "DAI": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+  "USDC": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+  "WBTC": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+  "FixedPriceAggregator:FixedPriceUsdcAggregator": "0x2609334dC5D6efBAa18744100F46Dd42a7ac8eD8",
+  "ChainlinkReporter:Oracle": "0x6f668117CaA90Ea73c27adC562f5A2A06CCA9092",
+  "WhitePaperInterestRateModel:ETH": "0x3eC8e03BF8b67b7d793f2de6EB59045277D02831",
+  "WhitePaperInterestRateModel:WBTC": "0x47cef4AB8f68Da8156D705e0046A970b6b9cf3e8",
+  "JumpRateModelV2:Stablecoins": "0xb7DB062cAAcdd0b74EFEb15026f46b792Ca5c75A",
+  "JumpRateModelV2:ProtectionMarketFactory": "0x795cEf98568515D7Ed28Aec8dEaaa76b58b40a6C",
+  "ComptrollerStatic:Comptroller": "0x349f0A62CE40055b70557e1173287469d601A1e0",
+  "CEtherFactory:CEtherFactory": "0x0a7c9c42EE21f306824bF8C99778866998E3c313",
+  "CErc20Factory:CErc20Factory": "0xD78D95dd126dF512A03b127C527c240798f5a7A0",
+  "ProtectionMarketFactory:ProtectionMarketFactory": "0x8990B793F530AF73Ad2Ac721F9DB9050c14f3098",
+  "CErc20Immutable:Money Market:Cozy Ether": "0x38B050b6f78c66a7dD9b336cD1Ff10fF2B9e9922",
+  "CErc20Immutable:Money Market:Cozy Dai": "0xdcB99DFbe5368d7c2d671A9AE5C4164FF69D86D3",
+  "CErc20Immutable:Money Market:Cozy USD Coin": "0xeEEE96017550c817643bB0e85EBEbc512e7A27BA",
+  "CErc20Immutable:Money Market:Cozy Wrapped BTC": "0xA60ffbB5caAcA4d26Cb4326D82494163B1071Fc6",
+  "Maximillion:Maximillion": "0xf859A1AD94BcF445A406B892eF0d3082f4174088"
+}
