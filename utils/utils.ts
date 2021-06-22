@@ -82,22 +82,57 @@ export const fundAccount = async (tokenAddress: string, amount: string, to: stri
   const tokenAbi = ['function transfer(address,uint256) returns (bool)', 'function decimals() view returns (uint8)'];
 
   // We impersonate the binance exchange account on mainnet as a source of tokens
-  const exchange = '0x28C6c06298d514Db089934071355E5743bf21d60';
-  await hre.network.provider.request({ method: 'hardhat_impersonateAccount', params: [exchange] });
-  const signer = await hre.ethers.provider.getSigner(exchange);
+  const funderAddress = '0x28C6c06298d514Db089934071355E5743bf21d60';
+  await assertSufficientBalance(funderAddress, tokenAddress, amount, hre);
+  await hre.network.provider.request({ method: 'hardhat_impersonateAccount', params: [funderAddress] });
+  const signer = await hre.ethers.provider.getSigner(funderAddress);
 
   if (tokenAddress === mainnetAddresses.ETH) {
-    // Transfer ETH from the exchange to the wallet
+    // Transfer ETH from the funderAddress to the wallet
     await signer.sendTransaction({ to, value: parseEther(amount) });
   } else {
-    // Transfer tokens from the exchange to the wallet
+    // Transfer tokens from the funderAddress to the wallet
     const token = new Contract(tokenAddress, tokenAbi, signer);
     const decimals = await token.decimals();
     await token.transfer(to, parseUnits(amount, decimals));
   }
 
   // Stop impersonating the account since it's no longer needed
-  await hre.network.provider.request({ method: 'hardhat_stopImpersonatingAccount', params: [exchange] });
+  await hre.network.provider.request({ method: 'hardhat_stopImpersonatingAccount', params: [funderAddress] });
+};
+
+/**
+ * @notice Helper method to check that an accounts balance of the given token is above the provided amount
+ * @param account Account to check balance of
+ * @param tokenAddress Address of token
+ * @param amount Amount to send in human-readable form
+ * @param hre HardhatRuntimeEnvironment, used for getting provider
+ */
+const assertSufficientBalance = async (
+  account: string,
+  tokenAddress: string,
+  amount: string,
+  hre: HardhatRuntimeEnvironment
+) => {
+  // Get token contract (only used if tokenAddress is not ETH)
+  const tokenAbi = ['function balanceOf(address) returns (uint256)', 'function decimals() view returns (uint8)'];
+  const token = new Contract(tokenAddress, tokenAbi, hre.ethers.provider);
+
+  // Check balances
+  const isEth = tokenAddress === mainnetAddresses.ETH;
+  const accountBalance = isEth ? await hre.ethers.provider.getBalance(account) : await token.balanceOf(account);
+  const desiredBalance = isEth ? parseEther(amount) : parseUnits(amount, await token.decimals());
+
+  // Throw if insufficient balance
+  if (accountBalance.lt(desiredBalance)) {
+    const message = `The funding address used to acquire tokens for testing has an insufficient balance of the token at address ${tokenAddress}.
+
+    Account:           ${account}
+    Current balance:   ${accountBalance}
+    Requested amount:  ${desiredBalance}\n\nPlease request an amount less than the account's balance, or update the address used in utils.ts to an address with a sufficient balance.
+    `;
+    throw new Error(message);
+  }
 };
 
 /**
