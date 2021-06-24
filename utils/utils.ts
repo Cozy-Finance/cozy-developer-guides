@@ -115,7 +115,7 @@ const assertSufficientBalance = async (
   hre: HardhatRuntimeEnvironment
 ) => {
   // Get token contract (only used if tokenAddress is not ETH)
-  const tokenAbi = ['function balanceOf(address) returns (uint256)', 'function decimals() view returns (uint8)'];
+  const tokenAbi = ['function balanceOf(address) view returns (uint256)', 'function decimals() view returns (uint8)'];
   const token = new Contract(tokenAddress, tokenAbi, hre.ethers.provider);
 
   // Check balances
