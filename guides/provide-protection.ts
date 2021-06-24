@@ -38,6 +38,7 @@ async function main(): Promise<void> {
   const allMarkets = await comptroller.getAllMarkets();
   if (!allMarkets.includes(yearnProtectionMarketAddress)) {
     logFailure("Provided Protection Market address not found in the Comptroller's list of all markets");
+    return;
   }
   logSuccess('Provided Protection Market address is valid');
 

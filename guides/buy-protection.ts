@@ -99,7 +99,6 @@ async function main(): Promise<void> {
   // Now we execute the borrow
   const parsedBorrowAmount = parseUnits(borrowAmount, await usdc.decimals()); // scale amount based on number of decimals
   const borrowTx = await yearnProtectionMarket.borrow(parsedBorrowAmount);
-  console.log(1);
   const { log: borrowLog, receipt: borrowReceipt } = await findLog(borrowTx, yearnProtectionMarket, 'Borrow', provider);
   logSuccess(`Protected USDC borrowed in transaction ${borrowReceipt.transactionHash}`);
 
