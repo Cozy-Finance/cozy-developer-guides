@@ -67,8 +67,9 @@ async function main(): Promise<void> {
   // to create a new Protection Market before a USDC Money Market existed, our transaction would revert. Also,
   // notice how we do not provide an `interestRateModel` address--this means we'll use the default interest rate model
   // specified by the `ProtectionMarketFactory`. If you want to use a custom interest rate model, develop, test, and
-  // deploy your interest rate model, then pass the address as a third input to `deployProtectionMarket()`
-  const tx = await comptroller.deployProtectionMarket(usdcAddress, trigger.address);
+  // deploy your interest rate model, then use the commented out version below
+  const tx = await comptroller['deployProtectionMarket(address,address)'](usdcAddress, trigger.address);
+  // const tx = await comptroller['deployProtectionMarket(address,address,address)'](usdcAddress, trigger.address, interestRateModelAddress);
 
   // This should emit a ProtectionMarketListed event on success, so let's check for that event. If not found, this
   // method will throw and print the Failure error codes which can be looked up in ErrorReporter.sol
