@@ -212,10 +212,10 @@ async function main(): Promise<void> {
   const maximillion = new Contract(maximillionAddress, maximillionAbi, signer);
   const ethMarketAddress = getContractAddress('CozyETH', chainId); // address of the Cozy ETH Money Market
 
-  // Now we do the repay. Our debt is zero, so we send some excess ETH to be refunded after repaying the debt.
-  // Notice how we specify that we are repaying debt for ourselves, `signer.address`, and we specify the address of
-  // the market to repay debt in, `ethMarketAddress`. (We don't look for the success logs since this is a dummy
-  // transaction and we have no debt, but in practice you should).
+  // Now we do the repay. In this case our debt is zero, so any ETH sent is excess ETH that will be refunded after
+  // repaying the debt. Notice how we specify that we are repaying debt for ourselves, `signer.address`, and we specify
+  // the address of the market to repay debt in, `ethMarketAddress`. (We don't look for the success logs since this is
+  // a dummy transaction and we have no debt, but in practice you should).
   const value = parseUnits('0.1', 18);
   const repayEthTx = await maximillion.repayBehalfExplicit(signer.address, ethMarketAddress, { value });
 }

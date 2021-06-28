@@ -48,7 +48,8 @@ async function main(): Promise<void> {
   logSuccess(`Safe to continue: Found ETH Money Market at ${cozyEthAddress}`);
 
   // Create a contract instance of the Cozy ETH Money Market
-  const cozyEth = new Contract(cozyEthAddress, cozyEthAbi, signer); // for tokens: `new Contract(cozyEthAddress, cozyTokenAbi, signer)`
+  const cozyEth = new Contract(cozyEthAddress, cozyEthAbi, signer);
+  // const cozyToken = new Contract(cozyTokenAddress, cozyTokenAbi, signer); // for tokens
 
   // We're now ready to supply the collateral to the market, but there's some preparation we need to do beforehand.
   // First, recall that ETH has 18 decimal places, so we need to take that into account.
@@ -67,7 +68,8 @@ async function main(): Promise<void> {
   //   logSuccess('Approval transaction successful. Ready to mint CozyToken with our token');
 
   // Ready to mint our CozyETH from ETH
-  const mintTx = await cozyEth.mint({ value: parsedSupplyAmount, gasLimit: '5000000' }); // for tokens: `await cozyToken.mint(parsedSupplyAmount)`
+  const mintTx = await cozyEth.mint({ value: parsedSupplyAmount, gasLimit: '5000000' });
+  // const mintTx =await cozyToken.mint(parsedSupplyAmount); // for tokens
   const { log: mintLog, receipt: mintReceipt } = await findLog(mintTx, cozyEth, 'Mint', provider);
   logSuccess(`CozyETH successfully minted in transaction ${mintReceipt.transactionHash}`);
 
