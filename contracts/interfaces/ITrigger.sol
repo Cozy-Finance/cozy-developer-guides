@@ -5,22 +5,22 @@ pragma solidity ^0.8.5;
  * @dev All trigger contracts created must inherit from this contract and conform to this interface
  */
 abstract contract ITrigger {
-  /// @notice Trigger name, equivalent to an ERC-20 token's name
+  /// @notice Trigger name, similar to an ERC-20 token's name
   string public name;
 
-  /// @notice Trigger symbol, equivalent to an ERC-20 token's symbol
+  /// @notice Trigger symbol, similar to an ERC-20 token's symbol
   string public symbol;
 
   /// @notice Trigger description
   string public description;
 
-  /// @notice Array of IDs of platforms covered by this trigger
+  /// @notice Array of IDs of protocol platforms covered by this trigger
   uint256[] public platformIds;
 
   /// @notice Returns the address of the recipient who receives subsidies for creating a protection market using this trigger
   address public immutable recipient;
 
-  /// @notice Returns true if trigger condition has been met
+  /// @notice Returns true if the trigger condition has been met
   bool public isTriggered;
 
   /// @notice Emitted when the trigger is activated
@@ -41,8 +41,8 @@ abstract contract ITrigger {
   }
 
   /**
-   * @notice Returns an array of IDs, where each ID corresponds to a platform covered by this trigger
-   * @dev See documentation for mapping of ID numbers to platforms
+   * @notice Returns an array of IDs, where each ID corresponds to a protocol platform covered by this trigger
+   * @dev See documentation for mapping of ID numbers to protocol platforms
    */
   function getPlatformIds() external view returns (uint256[] memory) {
     return platformIds;
@@ -59,13 +59,13 @@ abstract contract ITrigger {
    * @return True if trigger condition occurred, false otherwise
    */
   function checkAndToggleTrigger() external returns (bool) {
-    // Return true if the trigger condition has already been toggled
+    // Returns true if the trigger condition has already been toggled
     if (isTriggered) return true;
 
-    // Return false if the protection market has not been triggered
+    // Returns false if the trigger condition has not been toggled
     if (!checkTriggerCondition()) return false;
 
-    // Return true if the protection market market has been triggered
+    // Returns true if the trigger condition has been toggled
     emit TriggerActivated();
     isTriggered = true;
     return isTriggered;
