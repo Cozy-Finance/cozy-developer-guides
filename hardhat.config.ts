@@ -47,7 +47,11 @@ const config: HardhatUserConfig = {
     hardhat: {
       accounts: { mnemonic },
       chainId: chainIds.hardhat,
-      forking: { url: rpcUrl },
+      initialBaseFeePerGas: 0,
+      forking: {
+        url: rpcUrl,
+        blockNumber: 13498819, // requires archive node data
+      },
     },
     mainnet: createNetworkConfig('mainnet'),
   },
@@ -61,7 +65,7 @@ const config: HardhatUserConfig = {
     timeout: 0,
   },
   solidity: {
-    version: '0.8.5',
+    version: '0.8.9',
     settings: {
       metadata: {
         // Not including the metadata hash
