@@ -94,10 +94,11 @@ contract CozyInvestCurve3CryptoEth {
     require(_ethMarket == moneyMarket || _ethMarket == protectionMarket, "Invalid borrow market");
     ICozyEther _market = ICozyEther(_ethMarket);
 
-    // Borrow ETH from Cozy market
+    // Borrow ETH from Cozy market. The return value from this method is an error code,
+    // where a value of zero indicates no error (i.e. the borrow was successful)
     require(_market.borrow(_borrowAmount) == 0, "Borrow failed");
 
-    // Add liquidity to Curve, which returns a receipt token
+    // Add liquidity to Curve, which gives the caller a receipt token and returns the amount of receipt tokens received
     uint256 _balance = depositZap.add_liquidity{value: _borrowAmount}(
       [0, 0, _borrowAmount],
       _curveMinAmountOut,
@@ -105,7 +106,9 @@ contract CozyInvestCurve3CryptoEth {
     );
 
     // Approve the Curve tricrypto liquidity gauge to spend our receipt tokens using OpenZeppelin's
-    // SafeERC20 safeApprove function
+    // SafeERC20 safeApprove method. As per EIP-20, allowance is set to 0 first to prevent attack vectors 
+    // on the approve method (https://eips.ethereum.org/EIPS/eip-20#approve). This is explicitly required by
+    // some ERC20 tokens, such as USDT.
     curveLpToken.safeApprove(address(gauge), 0);
     curveLpToken.safeApprove(address(gauge), type(uint256).max);
 
@@ -133,14 +136,18 @@ contract CozyInvestCurve3CryptoEth {
     // Withdraw lp tokens from liquidity gauge
     gauge.withdraw(_redeemAmount);
 
-    // Approve Curve's depositZap to spend our receipt tokens
+    // Approve Curve's depositZap to spend our receipt tokens using OpenZeppelin's
+    // SafeERC20 safeApprove method. As per EIP-20, allowance is set to 0 first to prevent attack vectors 
+    // on the approve method (https://eips.ethereum.org/EIPS/eip-20#approve). This is explicitly required by
+    // some ERC20 tokens, such as USDT.
     curveLpToken.safeApprove(address(depositZap), 0);
     curveLpToken.safeApprove(address(depositZap), type(uint256).max);
 
     // Withdraw from Curve
     depositZap.remove_liquidity_one_coin(_redeemAmount, ethIndex, _curveMinAmountOut, address(this));
 
-    // Pay back as much of the borrow as possible, excess ETH is refunded to `recipient`
+    // Pay back as much of the borrow as possible, excess ETH is refunded to `recipient`. Maximillion handles
+    // error codes when repayment is unsuccessful.
     maximillion.repayBehalfExplicit{value: address(this).balance}(address(this), _market);
 
     // Transfer any remaining funds to the user

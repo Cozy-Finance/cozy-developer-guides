@@ -88,7 +88,8 @@ contract CozyInvestConvex is CozyInvestHelpers, ICozyInvest1, ICozyDivest1, ICoz
   /// @notice Convex reward manager
   address public immutable convexRewardManager;
 
-  /// @notice Curve metapool
+  /// @notice There are two different `add_liquidity` function signatures used by 
+  // different Curve deposit zaps, so this tells the contract which one to use
   bool public immutable longSigFormat;
 
   /// @notice Convex deposit contract address
@@ -130,11 +131,15 @@ contract CozyInvestConvex is CozyInvestHelpers, ICozyInvest1, ICozyDivest1, ICoz
     uint256 _borrowAmount,
     uint256 _curveMinAmountOut
   ) external {
-    // 1. Borrow underlying from cozy
-    require((_market == address(moneyMarket) || _market == address(protectionMarket)), "Invalid borrow market");
+    // 1. Borrow underlying from Cozy. The return value from this method is an error code,
+    // where a value of zero indicates no error (i.e. the borrow was successful)
+    require(_market == address(moneyMarket) || _market == address(protectionMarket), "Invalid borrow market");
     require(ICozyToken(_market).borrow(_borrowAmount) == 0, "Borrow failed");
 
-    // 2. Approve curve deposit zap to spend the underlying so it can deposit into curve pool
+    // 2. Approve curve deposit zap to spend the underlying so it can deposit into curve pool using OpenZeppelin's
+    // SafeERC20 safeApprove method. As per EIP-20, allowance is set to 0 first to prevent attack vectors 
+    // on the approve method (https://eips.ethereum.org/EIPS/eip-20#approve). This is explicitly required by
+    // some ERC20 tokens, such as USDT.
     IERC20(underlying).safeApprove(curveDepositZap, 0);
     IERC20(underlying).safeApprove(curveDepositZap, type(uint256).max);
 
@@ -172,7 +177,7 @@ contract CozyInvestConvex is CozyInvestHelpers, ICozyInvest1, ICozyDivest1, ICoz
     uint256 _excessTokens,
     uint256 _curveMinAmountOut
   ) external {
-    require((_market == moneyMarket || _market == protectionMarket), "Invalid borrow market");
+    require(_market == moneyMarket || _market == protectionMarket, "Invalid borrow market");
 
     // 1. Withdraw from convex
     IConvexRewardManager _convexRewardManager = IConvexRewardManager(convexRewardManager);
@@ -180,7 +185,9 @@ contract CozyInvestConvex is CozyInvestHelpers, ICozyInvest1, ICozyDivest1, ICoz
 
     // 2. Withdraw from curve
     // There are two kinds of curve zaps -- one requires curve pool to be specified in first argument.
-    // Approve Curve's depositZap to spend our receipt tokens
+    // Approve Curve's depositZap to spend our receipt tokens using OpenZeppelin's SafeERC20 safeApprove method. 
+    // As per EIP-20, allowance is set to 0 first to prevent attack vectors on the approve method 
+    // (https://eips.ethereum.org/EIPS/eip-20#approve). This is explicitly required by some ERC20 tokens, such as USDT.
     IERC20(curveLpToken).safeApprove(curveDepositZap, 0);
     IERC20(curveLpToken).safeApprove(curveDepositZap, type(uint256).max);
     if (longSigFormat) {
