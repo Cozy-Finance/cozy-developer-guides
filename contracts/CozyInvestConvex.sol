@@ -88,7 +88,7 @@ contract CozyInvestConvex is CozyInvestHelpers, ICozyInvest1, ICozyDivest1, ICoz
   /// @notice Convex reward manager
   address public immutable convexRewardManager;
 
-  /// @notice There are two different `add_liquidity` function signatures used by 
+  /// @notice There are two different `add_liquidity` function signatures used by
   // different Curve deposit zaps, so this tells the contract which one to use
   bool public immutable longSigFormat;
 
@@ -137,7 +137,7 @@ contract CozyInvestConvex is CozyInvestHelpers, ICozyInvest1, ICozyDivest1, ICoz
     require(ICozyToken(_market).borrow(_borrowAmount) == 0, "Borrow failed");
 
     // 2. Approve curve deposit zap to spend the underlying so it can deposit into curve pool using OpenZeppelin's
-    // SafeERC20 safeApprove method. As per EIP-20, allowance is set to 0 first to prevent attack vectors 
+    // SafeERC20 safeApprove method. As per EIP-20, allowance is set to 0 first to prevent attack vectors
     // on the approve method (https://eips.ethereum.org/EIPS/eip-20#approve). This is explicitly required by
     // some ERC20 tokens, such as USDT.
     IERC20(underlying).safeApprove(curveDepositZap, 0);
@@ -185,8 +185,8 @@ contract CozyInvestConvex is CozyInvestHelpers, ICozyInvest1, ICozyDivest1, ICoz
 
     // 2. Withdraw from curve
     // There are two kinds of curve zaps -- one requires curve pool to be specified in first argument.
-    // Approve Curve's depositZap to spend our receipt tokens using OpenZeppelin's SafeERC20 safeApprove method. 
-    // As per EIP-20, allowance is set to 0 first to prevent attack vectors on the approve method 
+    // Approve Curve's depositZap to spend our receipt tokens using OpenZeppelin's SafeERC20 safeApprove method.
+    // As per EIP-20, allowance is set to 0 first to prevent attack vectors on the approve method
     // (https://eips.ethereum.org/EIPS/eip-20#approve). This is explicitly required by some ERC20 tokens, such as USDT.
     IERC20(curveLpToken).safeApprove(curveDepositZap, 0);
     IERC20(curveLpToken).safeApprove(curveDepositZap, type(uint256).max);

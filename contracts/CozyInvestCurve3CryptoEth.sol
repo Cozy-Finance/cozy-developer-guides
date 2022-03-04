@@ -106,7 +106,7 @@ contract CozyInvestCurve3CryptoEth {
     );
 
     // Approve the Curve tricrypto liquidity gauge to spend our receipt tokens using OpenZeppelin's
-    // SafeERC20 safeApprove method. As per EIP-20, allowance is set to 0 first to prevent attack vectors 
+    // SafeERC20 safeApprove method. As per EIP-20, allowance is set to 0 first to prevent attack vectors
     // on the approve method (https://eips.ethereum.org/EIPS/eip-20#approve). This is explicitly required by
     // some ERC20 tokens, such as USDT.
     curveLpToken.safeApprove(address(gauge), 0);
@@ -137,7 +137,7 @@ contract CozyInvestCurve3CryptoEth {
     gauge.withdraw(_redeemAmount);
 
     // Approve Curve's depositZap to spend our receipt tokens using OpenZeppelin's
-    // SafeERC20 safeApprove method. As per EIP-20, allowance is set to 0 first to prevent attack vectors 
+    // SafeERC20 safeApprove method. As per EIP-20, allowance is set to 0 first to prevent attack vectors
     // on the approve method (https://eips.ethereum.org/EIPS/eip-20#approve). This is explicitly required by
     // some ERC20 tokens, such as USDT.
     curveLpToken.safeApprove(address(depositZap), 0);
