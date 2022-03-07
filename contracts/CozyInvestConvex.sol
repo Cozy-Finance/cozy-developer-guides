@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/ICozyInvest.sol";
 import "./utils/CozyInvestHelpers.sol";
+import "./utils/TransferHelper.sol";
 
 interface IConvexBooster {
   // Returns: lptoken, token, gauge, crvRewards, stash, shutdown
@@ -69,7 +69,7 @@ interface ICrvDepositZap {
  * @dev This contract is intended to be used by delegatecalling to it from a DSProxy
  */
 contract CozyInvestConvex is CozyInvestHelpers, ICozyInvest1, ICozyDivest1, ICozyReward {
-  using SafeERC20 for IERC20;
+  using TransferHelper for IERC20;
 
   /// @notice The unprotected money market we borrow from / repay to
   address public immutable moneyMarket;
@@ -139,7 +139,7 @@ contract CozyInvestConvex is CozyInvestHelpers, ICozyInvest1, ICozyDivest1, ICoz
     // 2. Approve curve deposit zap to spend the underlying so it can deposit into curve pool using the safeApprove method.
     // As per ERC-20, allowance is set to 0 first to prevent attack vectors on the approve method
     // (https://eips.ethereum.org/EIPS/eip-20#approve). This is explicitly required by some ERC-20 tokens, such as USDT.
-    TransferHelper.safeApprove(underlying, curveDepositZap, type(uint256).max);
+    IERC20(underlying).safeApprove(curveDepositZap, type(uint256).max);
 
     // 3. Deposit into curve pool
     uint256[4] memory _tokenAmounts = [uint256(0), uint256(0), uint256(0), uint256(0)];
@@ -155,7 +155,7 @@ contract CozyInvestConvex is CozyInvestHelpers, ICozyInvest1, ICozyDivest1, ICoz
     // because the Curve token requires that there is zero allowance when calling `approve`
     if (IERC20(curveLpToken).allowance(address(this), convex) == 0) {
       // Approve Convex to spend our receipt tokens using the safeApprove method.
-      TransferHelper.safeApprove(curveLpToken, convex, type(uint256).max);
+      IERC20(curveLpToken).safeApprove(convex, type(uint256).max);
     }
 
     // 5. Deposit into convex booster contract (call depositAll with _pid, and _stake = true)
@@ -189,7 +189,7 @@ contract CozyInvestConvex is CozyInvestHelpers, ICozyInvest1, ICozyDivest1, ICoz
     // because the Curve token requires that there is zero allowance when calling `approve`
     if (IERC20(curveLpToken).allowance(address(this), curveDepositZap) == 0) {
       // Approve Curve's depositZap to spend our receipt tokens using the safeApprove method.
-      TransferHelper.safeApprove(curveLpToken, curveDepositZap, type(uint256).max);
+      IERC20(curveLpToken).safeApprove(curveDepositZap, type(uint256).max);
     }
     // There are two kinds of curve zaps -- one requires curve pool to be specified in first argument.
     if (longSigFormat) {

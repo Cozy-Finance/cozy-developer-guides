@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "./interfaces/ICozy.sol";
 import "./interfaces/ICozyInvest.sol";
@@ -38,9 +37,8 @@ interface ICrvGauge {
  * @dev This contract is intended to be used by delegatecalling to it from a DSProxy
  */
 contract CozyInvestCurve3CryptoEth {
-  /// @dev OpenZeppelin's Address and SafeERC20 implementations are used for addresses and ERC20 tokens
   using Address for address payable;
-  using SafeERC20 for IERC20;
+  using TransferHelper for IERC20;
 
   /// @notice Cozy protection market with ETH underlying to borrow from: Curve 3Crypto Trigger
   address public immutable protectionMarket;
@@ -108,11 +106,11 @@ contract CozyInvestCurve3CryptoEth {
 
     // Approve the Curve tricrypto liquidity gauge to spend our receipt tokens. We need this allowance check first
     // because the Curve token requires that there is zero allowance when calling `approve`
-    if (IERC20(curveLpToken).allowance(address(this), address(depositZap)) == 0) {
+    if (curveLpToken.allowance(address(this), address(depositZap)) == 0) {
       // Approve the Curve tricrypto liquidity gauge to spend our receipt tokens using the safeApprove method.
       // As per EIP-20, allowance is set to 0 first to prevent attack vectors on the approve method
       // (https://eips.ethereum.org/EIPS/eip-20#approve). This is explicitly required by some ERC20 tokens, such as USDT.
-      TransferHelper.safeApprove(address(curveLpToken), address(gauge), type(uint256).max);
+      curveLpToken.safeApprove(address(gauge), type(uint256).max);
     }
 
     // Deposit lp tokens in to liquidity gauge to earn reward tokens
@@ -141,9 +139,9 @@ contract CozyInvestCurve3CryptoEth {
 
     // Approve Curve's depositZap to spend our receipt tokens. We need this allowance check first because
     // the Curve token requires that there is zero allowance when calling `approve`.
-    if (IERC20(curveLpToken).allowance(address(this), address(depositZap)) == 0) {
+    if (curveLpToken.allowance(address(this), address(depositZap)) == 0) {
       // Approve Curve's depositZap to spend our receipt tokens using using the safeApprove method.
-      TransferHelper.safeApprove(address(curveLpToken), address(depositZap), type(uint256).max);
+      curveLpToken.safeApprove(address(depositZap), type(uint256).max);
     }
 
     // Withdraw from Curve

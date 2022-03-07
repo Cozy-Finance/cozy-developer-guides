@@ -23,12 +23,12 @@ abstract contract CozyInvestHelpers {
     uint256 _borrowBalance = ICozyToken(_market).borrowBalanceCurrent(address(this));
     uint256 _initialBalance = IERC20(_underlying).balanceOf(address(this));
     if (_initialBalance < _borrowBalance && _excessTokens > 0) {
-      TransferHelper.safeTransferFrom(_underlying, msg.sender, address(this), _excessTokens);
+      TransferHelper.safeTransferFrom(IERC20(_underlying), msg.sender, address(this), _excessTokens);
     }
     uint256 _balance = _initialBalance + _excessTokens; // this contract's current balance
     uint256 _repayAmount = _balance >= _borrowBalance ? type(uint256).max : _balance;
 
-    TransferHelper.safeApprove(_underlying, address(_market), _repayAmount);
+    TransferHelper.safeApprove(IERC20(_underlying), address(_market), _repayAmount);
     require(ICozyToken(_market).repayBorrow(_repayAmount) == 0, "Repay failed");
   }
 }
