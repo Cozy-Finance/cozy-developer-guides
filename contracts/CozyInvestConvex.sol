@@ -136,12 +136,10 @@ contract CozyInvestConvex is CozyInvestHelpers, ICozyInvest1, ICozyDivest1, ICoz
     require(_market == address(moneyMarket) || _market == address(protectionMarket), "Invalid borrow market");
     require(ICozyToken(_market).borrow(_borrowAmount) == 0, "Borrow failed");
 
-    // 2. Approve curve deposit zap to spend the underlying so it can deposit into curve pool using OpenZeppelin's
-    // SafeERC20 safeApprove method. As per EIP-20, allowance is set to 0 first to prevent attack vectors
-    // on the approve method (https://eips.ethereum.org/EIPS/eip-20#approve). This is explicitly required by
-    // some ERC20 tokens, such as USDT.
-    IERC20(underlying).safeApprove(curveDepositZap, 0);
-    IERC20(underlying).safeApprove(curveDepositZap, type(uint256).max);
+    // 2. Approve curve deposit zap to spend the underlying so it can deposit into curve pool using the safeApprove method.
+    // As per ERC-20, allowance is set to 0 first to prevent attack vectors on the approve method
+    // (https://eips.ethereum.org/EIPS/eip-20#approve). This is explicitly required by some ERC-20 tokens, such as USDT.
+    TransferHelper.safeApprove(underlying, curveDepositZap, type(uint256).max);
 
     // 3. Deposit into curve pool
     uint256[4] memory _tokenAmounts = [uint256(0), uint256(0), uint256(0), uint256(0)];
@@ -153,9 +151,12 @@ contract CozyInvestConvex is CozyInvestHelpers, ICozyInvest1, ICozyDivest1, ICoz
       ICrvDepositZap(curveDepositZap).add_liquidity(_tokenAmounts, _curveMinAmountOut);
     }
 
-    // 4. Safe approve curve pool receipt token to deposit into convex booster contract
-    IERC20(curveLpToken).safeApprove(convex, 0);
-    IERC20(curveLpToken).safeApprove(convex, type(uint256).max);
+    // 4. Safe approve curve pool receipt token to deposit into convex booster contract. We need this allowance check first
+    // because the Curve token requires that there is zero allowance when calling `approve`
+    if (IERC20(curveLpToken).allowance(address(this), convex) == 0) {
+      // Approve Convex to spend our receipt tokens using the safeApprove method.
+      TransferHelper.safeApprove(curveLpToken, convex, type(uint256).max);
+    }
 
     // 5. Deposit into convex booster contract (call depositAll with _pid, and _stake = true)
     IConvexBooster(convex).depositAll(convexPoolId, true);
@@ -184,12 +185,13 @@ contract CozyInvestConvex is CozyInvestHelpers, ICozyInvest1, ICozyDivest1, ICoz
     _convexRewardManager.withdrawAndUnwrap(_withdrawAmount, false);
 
     // 2. Withdraw from curve
+    // Approve the Curve's depositZap to spend our receipt tokens. We need this allowance check first
+    // because the Curve token requires that there is zero allowance when calling `approve`
+    if (IERC20(curveLpToken).allowance(address(this), curveDepositZap) == 0) {
+      // Approve Curve's depositZap to spend our receipt tokens using the safeApprove method.
+      TransferHelper.safeApprove(curveLpToken, curveDepositZap, type(uint256).max);
+    }
     // There are two kinds of curve zaps -- one requires curve pool to be specified in first argument.
-    // Approve Curve's depositZap to spend our receipt tokens using OpenZeppelin's SafeERC20 safeApprove method.
-    // As per EIP-20, allowance is set to 0 first to prevent attack vectors on the approve method
-    // (https://eips.ethereum.org/EIPS/eip-20#approve). This is explicitly required by some ERC20 tokens, such as USDT.
-    IERC20(curveLpToken).safeApprove(curveDepositZap, 0);
-    IERC20(curveLpToken).safeApprove(curveDepositZap, type(uint256).max);
     if (longSigFormat) {
       ICrvDepositZap(curveDepositZap).remove_liquidity_one_coin(
         curveLpToken,

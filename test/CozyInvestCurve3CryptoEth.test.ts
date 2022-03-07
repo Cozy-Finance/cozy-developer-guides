@@ -220,7 +220,7 @@ pools.forEach((pool) => {
         expect(await ethMarket.borrowBalanceStored(proxy.address)).to.equal(0);
 
         // Balance of user wallet after clearing debt and redeeming curve lp tokens
-        expect(await balanceOf('eth', user.address)).to.equal('9999932847934785708925');
+        expect(await balanceOf('eth', user.address)).to.equal('9999932850239785708925');
       });
 
       it('works, partial divest', async () => {
@@ -288,7 +288,7 @@ pools.forEach((pool) => {
         expect(await ethMarket.borrowBalanceStored(proxy.address)).to.equal(0);
 
         // Balance of user wallet after clearing debt and redeeming curve lp tokens
-        expect(await balanceOf('eth', user.address)).to.equal('9973311723317505415671');
+        expect(await balanceOf('eth', user.address)).to.equal('9973311725622505415671');
       });
 
       it('allows divest to be called twice', async () => {
